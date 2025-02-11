@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  Tag,
 } from "lucide-react";
 
 const navigation = [
@@ -29,7 +30,15 @@ const navigation = [
     children: [
       { name: "All Products", href: "/admin/products" },
       { name: "Add New", href: "/admin/products/new" },
-      { name: "Categories", href: "/admin/products/categories" },
+    ],
+  },
+  {
+    name: "Categories",
+    href: "/admin/categories",
+    icon: <Tag className="h-6 w-6" />,
+    children: [
+      { name: "All Categories", href: "/admin/categories" },
+      { name: "Add New", href: "/admin/categories/new" },
     ],
   },
   {

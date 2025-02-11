@@ -92,10 +92,10 @@ function SalesChartComponent() {
           }
         />
         <YAxis
-          tickFormatter={(value: number) => `$${value.toLocaleString()}`}
+          tickFormatter={(value: number) => `₹${value.toLocaleString()}`}
         />
         <Tooltip
-          formatter={(value: number) => [`$${value.toLocaleString()}`, "Sales"]}
+          formatter={(value: number) => [`₹${value.toLocaleString()}`, "Sales"]}
           labelFormatter={(label: string) =>
             new Date(label).toLocaleDateString()
           }

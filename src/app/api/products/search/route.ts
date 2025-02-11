@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     let supabaseQuery = supabase
       .from("products")
-      .select("*, categories(name)", { count: "exact" })
-      .eq("status", "published");
+      .select("*", { count: "exact" });
+    // .eq("status", "published");
 
     // Full-text search on name and description
     if (query) {

@@ -9,34 +9,21 @@ interface ProductCount {
 // Get all categories
 export async function GET() {
   try {
-    // First, get all categories
-    const { data: categories, error: categoriesError } = await supabase
+    const { data: categories, error } = await supabase
       .from("categories")
       .select("*")
-      .order("name");
+      .order("created_at", { ascending: false });
 
-    if (categoriesError) throw categoriesError;
+    if (error) throw error;
 
-    // Get product counts for each category
-    const promises =
-      categories?.map(async (category) => {
-        const { count, error } = await supabase
-          .from("products")
-          .select("*", { count: "exact", head: true })
-          .eq("category_id", category.id);
-
-        return {
-          ...category,
-          product_count: error ? 0 : count || 0,
-        };
-      }) || [];
-
-    const formattedCategories = await Promise.all(promises);
-    return NextResponse.json(formattedCategories);
+    return NextResponse.json({
+      success: true,
+      data: categories,
+    });
   } catch (error) {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
+      { success: false, error: "Failed to fetch categories" },
       { status: 500 }
     );
   }
@@ -46,21 +33,37 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, image_url } = body;
 
-    const { data, error } = await supabase
+    if (!name) {
+      return NextResponse.json(
+        { success: false, error: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const { data: category, error } = await supabase
       .from("categories")
-      .insert([{ name, description }])
+      .insert([{ name, description, image_url, slug }])
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ ...data, product_count: 0 });
+    return NextResponse.json({
+      success: true,
+      data: category,
+    });
   } catch (error) {
     console.error("Error creating category:", error);
     return NextResponse.json(
-      { error: "Failed to create category" },
+      { success: false, error: "Failed to create category" },
       { status: 500 }
     );
   }
@@ -70,31 +73,38 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, description } = body;
+    const { id, name, description, image_url, is_active } = body;
 
-    const { data, error } = await supabase
+    if (!id || !name) {
+      return NextResponse.json(
+        { success: false, error: "ID and name are required" },
+        { status: 400 }
+      );
+    }
+
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const { data: category, error } = await supabase
       .from("categories")
-      .update({ name, description })
+      .update({ name, description, image_url, slug, is_active })
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
 
-    // Get product count
-    const { data: productCount, error: countError } = await supabase
-      .from("products")
-      .select("id", { count: "exact" })
-      .eq("category_id", id);
-
     return NextResponse.json({
-      ...data,
-      product_count: countError ? 0 : productCount?.length || 0,
+      success: true,
+      data: category,
     });
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(
-      { error: "Failed to update category" },
+      { success: false, error: "Failed to update category" },
       { status: 500 }
     );
   }
@@ -108,7 +118,7 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { error: "Category ID is required" },
+        { success: false, error: "ID is required" },
         { status: 400 }
       );
     }
@@ -117,11 +127,14 @@ export async function DELETE(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ message: "Category deleted successfully" });
+    return NextResponse.json({
+      success: true,
+      message: "Category deleted successfully",
+    });
   } catch (error) {
     console.error("Error deleting category:", error);
     return NextResponse.json(
-      { error: "Failed to delete category" },
+      { success: false, error: "Failed to delete category" },
       { status: 500 }
     );
   }

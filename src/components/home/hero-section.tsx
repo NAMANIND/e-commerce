@@ -2,54 +2,52 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative h-[600px] bg-gray-900 text-white overflow-hidden">
+    <section className="relative bg-gray-900 text-white overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/hero-bg.jpg"
-          alt="Hero background"
+          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1470&auto=format&fit=crop"
+          alt="Hero Background"
           fill
           className="object-cover opacity-50"
           priority
         />
       </div>
 
-      {/* Content */}
-      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col justify-center h-full max-w-2xl">
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
-            Discover Amazing Products
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 sm:py-48">
+        <div className="max-w-2xl">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Discover Your Perfect Style
           </h1>
-          <p className="text-xl sm:text-2xl mb-8 text-gray-200">
-            Shop the latest trends and find your perfect style. Quality products
-            at competitive prices.
+          <p className="text-lg sm:text-xl text-gray-200 mb-8 leading-relaxed">
+            Explore our curated collection of premium products designed to
+            elevate your lifestyle.
           </p>
-          <div className="flex gap-4">
-            <Button
-              asChild
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/products"
+              className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-medium transition-colors group"
             >
-              <Link href="/products">Shop Now</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white/10"
+              Shop Now
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              href="/categories"
+              className="inline-flex items-center justify-center px-8 py-4 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-medium backdrop-blur-sm transition-colors"
             >
-              <Link href="/categories">Browse Categories</Link>
-            </Button>
+              Browse Categories
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-900/50 to-transparent" />
+      <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-gradient-to-tl from-blue-500/20 to-transparent" />
+      <div className="absolute top-0 left-0 w-1/4 h-1/4 bg-gradient-to-br from-purple-500/20 to-transparent" />
     </section>
   );
 }

@@ -3,19 +3,25 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Pencil, Trash2, Plus } from "lucide-react";
+import { ImageUpload } from "@/components/admin/shared/image-upload";
 
 interface Category {
   id: string;
   name: string;
   description: string;
   product_count: number;
+  image_url?: string;
 }
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+    image_url: "",
+  });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   useEffect(() => {
@@ -26,8 +32,13 @@ export default function CategoriesPage() {
     try {
       const response = await fetch("/api/admin/categories");
       if (!response.ok) throw new Error("Failed to fetch categories");
-      const data = await response.json();
-      setCategories(data);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch categories");
+      }
+
+      setCategories(result.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setError("Failed to fetch categories");
@@ -51,6 +62,7 @@ export default function CategoriesPage() {
             id: editingCategory.id,
             name: newCategory.name,
             description: newCategory.description,
+            image_url: newCategory.image_url,
           }),
         });
       } else {
@@ -63,7 +75,7 @@ export default function CategoriesPage() {
 
       if (!response.ok) throw new Error("Failed to save category");
 
-      setNewCategory({ name: "", description: "" });
+      setNewCategory({ name: "", description: "", image_url: "" });
       setEditingCategory(null);
       fetchCategories();
     } catch (error) {
@@ -116,45 +128,63 @@ export default function CategoriesPage() {
       )}
 
       <Card className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Category Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={newCategory.name}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, name: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={newCategory.name}
+                  onChange={(e) =>
+                    setNewCategory({ ...newCategory, name: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  value={newCategory.description}
+                  onChange={(e) =>
+                    setNewCategory({
+                      ...newCategory,
+                      description: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
             </div>
 
             <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Description
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category Image
               </label>
-              <input
-                type="text"
-                id="description"
-                value={newCategory.description}
-                onChange={(e) =>
-                  setNewCategory({
-                    ...newCategory,
-                    description: e.target.value,
-                  })
+              <ImageUpload
+                value={newCategory.image_url}
+                onChange={(url) =>
+                  setNewCategory({ ...newCategory, image_url: url })
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                onRemove={() =>
+                  setNewCategory({ ...newCategory, image_url: "" })
+                }
+                folder="category-images"
               />
             </div>
           </div>
@@ -175,12 +205,25 @@ export default function CategoriesPage() {
         {categories.map((category) => (
           <Card key={category.id} className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">{category.name}</h3>
-                <p className="text-sm text-gray-500">{category.description}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {category.product_count} products
-                </p>
+              <div className="flex items-center gap-4">
+                {category.image_url && (
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden">
+                    <img
+                      src={category.image_url}
+                      alt={category.name}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-lg font-medium">{category.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {category.description}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {category.product_count} products
+                  </p>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -189,6 +232,7 @@ export default function CategoriesPage() {
                     setNewCategory({
                       name: category.name,
                       description: category.description,
+                      image_url: category.image_url || "",
                     });
                   }}
                   className="rounded-full p-2 hover:bg-gray-100"

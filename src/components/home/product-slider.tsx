@@ -22,6 +22,9 @@ interface Product {
     name: string;
     id: string;
   };
+  original_price: number;
+  discounted_price: number;
+  discount_percentage: number;
 }
 
 export function ProductSlider({
@@ -157,9 +160,24 @@ export function ProductSlider({
                   {product.description}
                 </p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="text-lg font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
-                  </span>
+                  {product.discounted_price < product.original_price && (
+                    <div className="flex items-center">
+                      <span className="text-sm line-through text-gray-500 mr-2">
+                        ₹{product.original_price.toFixed(2)}
+                      </span>
+                      <span className="text-lg font-bold text-red-600">
+                        ₹{product.discounted_price.toFixed(2)}
+                      </span>
+                      <span className="ml-2 text-sm text-green-600">
+                        {product.discount_percentage}% off
+                      </span>
+                    </div>
+                  )}
+                  {product.discounted_price >= product.original_price && (
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{product.original_price.toFixed(2)}
+                    </span>
+                  )}
                   <Button
                     onClick={() => addToCart(product.id)}
                     size="sm"

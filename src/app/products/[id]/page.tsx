@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/products/product-detail";
 import { supabase } from "@/lib/supabase";
+import { Navbar } from "@/components/products/navbar";
 
 interface ProductPageProps {
   params: Promise<{
@@ -43,6 +44,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main className="px-4 sm:px-6 lg:px-8 py-8">
+      <Navbar />
       <div className="max-w-7xl mx-auto">
         <ProductDetail product={product} />
       </div>

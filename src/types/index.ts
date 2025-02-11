@@ -28,7 +28,6 @@ export interface Address {
 export interface Category {
   id: string;
   name: string;
-  id: string;
   description: string | null;
   image_url: string | null;
   parent_id: string | null;
@@ -39,7 +38,6 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
-  id: string;
   description: string;
   price: number;
   compare_at_price: number | null;
@@ -53,6 +51,9 @@ export interface Product {
   created_at: Timestamp;
   updated_at: Timestamp;
   category?: Category;
+  original_price: number;
+  discounted_price: number;
+  discount_percentage: number;
 }
 
 export interface CartItem {

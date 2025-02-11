@@ -1,10 +1,12 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight } from "lucide-react";
 
 interface CategoryGridProps {
   limit?: number;
@@ -31,18 +33,19 @@ export function CategoryGrid({
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("/api/categories");
+      const response = await fetch("/api/admin/categories");
       const result = await response.json();
 
-      if (!result.success) {
+      if (!result.success || !Array.isArray(result.data)) {
         throw new Error(result.error || "Failed to fetch categories");
       }
 
-      if (!Array.isArray(result.data)) {
-        throw new Error("Invalid response format");
-      }
+      const categoriesWithProducts = result.data.map((category: any) => ({
+        ...category,
+        products: [], // Initialize empty products array since we don't need it for the grid
+      }));
 
-      setCategories(result.data.slice(0, limit));
+      setCategories(categoriesWithProducts.slice(0, limit));
     } catch (err) {
       console.error("Error fetching categories:", err);
       setError(
@@ -105,56 +108,56 @@ export function CategoryGrid({
   }
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-admin-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold text-admin-heading sm:text-4xl">
             Shop by Category
           </h2>
-          <p className="mt-4 text-xl text-gray-600">
+          <p className="mt-4 text-xl text-admin-subtext">
             Explore our wide range of products by category
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
+          {categories.map((category: Category) => (
             <Link
               key={category.id}
               href={`/products?category=${category.id}`}
-              className="group"
+              className="group relative overflow-hidden rounded-2xl bg-gray-100 hover:shadow-xl transition-all duration-300"
             >
-              <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <CardContent className="p-0">
-                  {showImages && category.image_url && (
-                    <div className="aspect-[16/9] relative">
-                      <Image
-                        src={category.image_url}
-                        alt={category.name}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">
-                      {category.name}
-                    </h3>
-                    {category.description && (
-                      <p className="mt-2 text-gray-600 line-clamp-2">
-                        {category.description}
-                      </p>
-                    )}
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-sm text-gray-500">
-                        {category.product_count} Products
-                      </p>
-                      <span className="text-sm font-medium text-gray-900 group-hover:text-gray-600">
-                        View Category →
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {showImages && (
+                <div className="aspect-[4/3] relative">
+                  <Image
+                    src={category.image_url}
+                    alt={category.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                </div>
+              )}
+              <div
+                className={`p-6 ${
+                  showImages
+                    ? "absolute bottom-0 left-0 right-0 text-white"
+                    : ""
+                }`}
+              >
+                <h3 className="text-xl font-semibold mb-2 group-hover:text-blue-400 transition-colors">
+                  {category.name}
+                </h3>
+                <p
+                  className={`text-sm ${
+                    showImages ? "text-gray-200" : "text-gray-600"
+                  }`}
+                >
+                  {category.description}
+                </p>
+                <div className="mt-4 flex items-center text-blue-400 font-medium">
+                  Shop Now
+                  <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
             </Link>
           ))}
         </div>
