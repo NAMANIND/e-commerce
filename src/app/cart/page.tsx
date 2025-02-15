@@ -295,7 +295,7 @@ export default function CartPage() {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-6"
                     onClick={() => {
                       // TODO: Implement checkout
-                      toast.info("Checkout functionality coming soon!");
+                      window.location.href = "/checkout";
                     }}
                   >
                     Proceed to Checkout

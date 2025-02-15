@@ -1,15 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Mail, Calendar } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+
+interface OrderStats {
+  user_id: string;
+  count: number;
+  sum: number;
+}
 
 interface Customer {
   id: string;
-  name: string;
   email: string;
   created_at: string;
+  last_sign_in_at: string | null;
+  user_metadata: {
+    full_name?: string;
+    phone?: string;
+  };
   orders_count: number;
   total_spent: number;
 }
@@ -17,109 +35,157 @@ interface Customer {
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchCustomers();
-  }, [search]);
+    loadCustomers();
+  }, []);
 
-  async function fetchCustomers() {
+  const loadCustomers = async () => {
     try {
-      const searchParams = new URLSearchParams();
-      if (search) {
-        searchParams.set("search", search);
+      console.log("Fetching customers...");
+
+      // Get all users from auth.users
+
+      const { data: usersData, error: usersError } =
+        await supabase.auth.admin.listUsers();
+
+      if (usersError) {
+        console.error("Error fetching users:", {
+          message: usersError.message,
+          details: usersError,
+        });
+        return;
       }
 
-      const response = await fetch(`/api/admin/customers?${searchParams}`);
-      if (!response.ok) throw new Error("Failed to fetch customers");
+      if (!usersData || usersData.length === 0) {
+        console.log("No users found");
+        setCustomers([]);
+        return;
+      }
 
-      const data = await response.json();
-      setCustomers(data);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
+      console.log("Users fetched:", usersData);
+
+      // Get all orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("user_id, total_amount");
+
+      if (ordersError) {
+        console.error("Error fetching orders:", ordersError);
+      }
+
+      // Calculate stats per user
+      const userStats = new Map();
+      ordersData?.forEach((order) => {
+        const stats = userStats.get(order.user_id) || {
+          orders_count: 0,
+          total_spent: 0,
+        };
+        stats.orders_count += 1;
+        stats.total_spent += order.total_amount || 0;
+        userStats.set(order.user_id, stats);
+      });
+
+      // Combine user data with their stats
+      const customersWithStats: Customer[] = usersData.map((user) => ({
+        id: user.id,
+        email: user.email || "",
+        created_at: user.created_at,
+        last_sign_in_at: user.last_sign_in_at || null,
+        user_metadata: user.raw_user_meta_data || {},
+        orders_count: userStats.get(user.id)?.orders_count || 0,
+        total_spent: userStats.get(user.id)?.total_spent || 0,
+      }));
+
+      console.log("Final transformed customers:", customersWithStats);
+      setCustomers(customersWithStats);
+    } catch (error: any) {
+      console.error("Error in loadCustomers:", {
+        message: error?.message || "Unknown error",
+        details: error,
+        stack: error?.stack,
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const filteredCustomers = customers.filter((customer) =>
+    [
+      customer.email,
+      customer.user_metadata.full_name,
+      customer.user_metadata.phone,
+    ]
+      .filter(Boolean)
+      .some((field) => field?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight">Customers</h2>
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i} className="p-6">
-              <div className="space-y-3">
-                <div className="h-4 w-1/4 bg-gray-200 rounded" />
-                <div className="h-4 w-1/2 bg-gray-200 rounded" />
-              </div>
-            </Card>
-          ))}
+      <div className="flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading customers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="sm:flex sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Customers</h2>
-        <div className="mt-4 sm:mt-0">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="search"
-              placeholder="Search customers..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-            />
-          </div>
-        </div>
+    <div className="space-y-4 p-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Customers</h1>
       </div>
 
-      <div className="space-y-4">
-        {customers.map((customer) => (
-          <Link key={customer.id} href={`/admin/customers/${customer.id}`}>
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-lg font-medium">{customer.name}</p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Mail className="h-4 w-4" />
-                    <span>{customer.email}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      Joined{" "}
-                      {new Date(customer.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold">
-                    ${customer.total_spent.toFixed(2)}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {customer.orders_count} orders
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
+      <div className="flex gap-4 mb-4">
+        <Input
+          placeholder="Search by name, email, or phone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
-        {customers.length === 0 && (
-          <Card className="p-12 text-center">
-            <div className="space-y-3">
-              <h3 className="text-lg font-medium">No customers found</h3>
-              <p className="text-sm text-gray-500">
-                Try adjusting your search to find what you're looking for.
-              </p>
-            </div>
-          </Card>
-        )}
+      <div className="bg-white rounded-lg shadow">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead>Last Login</TableHead>
+              <TableHead className="text-right">Orders</TableHead>
+              <TableHead className="text-right">Total Spent</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCustomers.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell>
+                  {customer.user_metadata.full_name || "N/A"}
+                </TableCell>
+                <TableCell>{customer.email}</TableCell>
+                <TableCell>{customer.user_metadata.phone || "N/A"}</TableCell>
+                <TableCell>
+                  {format(new Date(customer.created_at), "MMM d, yyyy")}
+                </TableCell>
+                <TableCell>
+                  {customer.last_sign_in_at
+                    ? format(new Date(customer.last_sign_in_at), "MMM d, yyyy")
+                    : "Never"}
+                </TableCell>
+                <TableCell className="text-right">
+                  {customer.orders_count}
+                </TableCell>
+                <TableCell className="text-right">
+                  ₹{customer.total_spent.toFixed(2)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

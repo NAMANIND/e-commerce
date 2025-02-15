@@ -128,7 +128,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
           </Link>
         ))}
       </div>
-      <div className="flex items-center justify-end mb-6">
+      <div className="flex items-center justify-end w-full mb-6 absolute right-1 top-4">
         <div className="flex space-x-2">
           <Button
             onClick={scrollLeft}

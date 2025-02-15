@@ -5,8 +5,8 @@ import { DollarSign, ShoppingBag, Users, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { SalesChart } from "@/components/admin/charts/sales-chart";
 import { ProductsChart } from "@/components/admin/charts/products-chart";
-import { RecentOrders } from "@/components/admin/tables/recent-orders";
-import { LowStockProducts } from "@/components/admin/tables/low-stock-products";
+import RecentOrdersTable from "@/components/admin/tables/recent-orders";
+import LowStockProductsTable from "@/components/admin/tables/low-stock-products";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -173,14 +173,14 @@ export default function AdminDashboard() {
           <div className="mb-4">
             <h3 className="text-lg font-medium">Recent Orders</h3>
           </div>
-          <RecentOrders />
+          <RecentOrdersTable />
         </Card>
 
         <Card className="p-6">
           <div className="mb-4">
             <h3 className="text-lg font-medium">Low Stock Products</h3>
           </div>
-          <LowStockProducts />
+          <LowStockProductsTable />
         </Card>
       </div>
     </div>

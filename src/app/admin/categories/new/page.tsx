@@ -22,13 +22,59 @@ export default function NewCategoryPage() {
   });
 
   const handleImageUpload = async (file: File) => {
-    // Implement image upload logic similar to products/new page
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "category-images");
+
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to upload image");
+      }
+
+      return result.data.url;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
+      return null;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Implement form submission logic
+
+    try {
+      const response = await fetch("/api/admin/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create category");
+      }
+
+      toast.success("Category created successfully");
+      router.push("/admin/categories");
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create category"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

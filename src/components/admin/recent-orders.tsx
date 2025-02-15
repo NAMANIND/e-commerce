@@ -13,23 +13,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
-interface OrderWithUser {
+interface Order {
   id: string;
   created_at: string;
   status: "pending" | "processing" | "completed" | "cancelled";
   total_amount: number;
   payment_status: "pending" | "paid" | "failed";
-  user_id: string;
-  users: {
-    email: string;
-  };
+  user_email: string | null;
 }
 
-interface Order extends Omit<OrderWithUser, "users"> {
-  user_email: string;
-}
-
-export default function RecentOrdersTable() {
+export default function RecentOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,47 +32,31 @@ export default function RecentOrdersTable() {
 
   const loadRecentOrders = async () => {
     try {
-      console.log("Fetching recent orders...");
-      const { data: ordersData, error: ordersError } = await supabase
+      const { data, error } = await supabase
         .from("orders")
         .select(
           `
-         *
+          id,
+          created_at,
+          status,
+          total_amount,
+          payment_status,
+          user_email:auth.users(email)
         `
         )
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (ordersError) {
-        console.error("Error fetching orders:", ordersError);
-        return;
-      }
+      if (error) throw error;
 
-      if (!ordersData || ordersData.length === 0) {
-        console.log("No orders found");
-        setOrders([]);
-        return;
-      }
-
-      console.log("Orders fetched:", ordersData);
-
-      const ordersWithEmails = ordersData.map((order: any) => ({
-        id: order.id,
-        created_at: order.created_at,
-        status: order.status,
-        total_amount: order.total_amount,
-        payment_status: order.payment_status,
-        user_id: order.user_id,
-        user_email: order.user_email?.[0]?.email || "N/A",
+      const transformedOrders = (data || []).map((order: any) => ({
+        ...order,
+        user_email: order.user_email?.[0]?.email || null,
       }));
 
-      setOrders(ordersWithEmails);
-    } catch (error: any) {
-      console.error("Error loading recent orders:", {
-        message: error?.message || "Unknown error",
-        details: error,
-        stack: error?.stack,
-      });
+      setOrders(transformedOrders);
+    } catch (error) {
+      console.error("Error loading recent orders:", error);
     } finally {
       setLoading(false);
     }
@@ -110,22 +87,7 @@ export default function RecentOrdersTable() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading recent orders...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="text-center py-6">
-        <p className="text-gray-500">No orders found</p>
-      </div>
-    );
+    return <div>Loading recent orders...</div>;
   }
 
   return (
@@ -150,7 +112,7 @@ export default function RecentOrdersTable() {
               <TableCell>
                 {format(new Date(order.created_at), "MMM d, yyyy")}
               </TableCell>
-              <TableCell>{order.user_email}</TableCell>
+              <TableCell>{order.user_email || "N/A"}</TableCell>
               <TableCell>
                 <Badge
                   className={`${getStatusColor(order.status)} capitalize`}

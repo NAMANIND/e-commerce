@@ -21,7 +21,7 @@ interface Product {
   image_url?: string;
 }
 
-export default function LowStockProductsTable() {
+export default function LowStockProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -4,12 +4,15 @@ import React from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { ShoppingBag, Search, Menu, X } from "lucide-react";
+import { ShoppingBag, Search, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const { user, isAuthenticated, signOut } = useAuth();
 
   const totalItems = cartItems.reduce(
     (total, item) => total + item.quantity,
@@ -53,6 +56,53 @@ export function Navbar() {
                   </span>
                 )}
               </Link>
+
+              {/* Profile Menu */}
+              <div className="relative">
+                {isAuthenticated ? (
+                  <>
+                    <button
+                      type="button"
+                      className="flex items-center gap-x-2 rounded-full p-2 hover:bg-gray-100"
+                      onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    >
+                      <span className="h-8 w-8 rounded-full bg-gray-100">
+                        <User className="h-8 w-8 p-1 text-gray-600" />
+                      </span>
+                      <span className="hidden text-sm font-medium text-gray-700 lg:block">
+                        {user?.user_metadata?.full_name || "Profile"}
+                      </span>
+                    </button>
+
+                    {showProfileMenu && (
+                      <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <User className="h-4 w-4" />
+                          Profile
+                        </Link>
+                        <button
+                          onClick={signOut}
+                          className="flex w-full items-center gap-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+                  >
+                    <User className="h-6 w-6" />
+                    <span className="text-sm font-medium">Sign in</span>
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Mobile menu button */}
@@ -90,6 +140,29 @@ export function Navbar() {
             >
               Cart ({totalItems})
             </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="block px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="block px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </nav>
