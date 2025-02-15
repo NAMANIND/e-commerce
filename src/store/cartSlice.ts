@@ -4,7 +4,9 @@ interface CartItem {
   id: string;
   name: string;
   price: number;
+  discounted_price: number;
   quantity: number;
+  stock: number;
   image_url?: string; // Optional since some items might not have images
 }
 
@@ -60,7 +62,10 @@ const cartSlice = createSlice({
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
 export const selectCartTotal = (state: { cart: CartState }) =>
   state.cart.items.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) =>
+      total +
+      (item.discounted_price > 0 ? item.discounted_price : item.price) *
+        item.quantity,
     0
   );
 export const selectCartItemsCount = (state: { cart: CartState }) =>

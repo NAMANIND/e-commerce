@@ -19,14 +19,21 @@ export default function CartPage() {
   const dispatch = useDispatch();
 
   const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) =>
+      total +
+      (item.discounted_price > 0 ? item.discounted_price : item.price) *
+        item.quantity,
     0
   );
   const shipping = subtotal > 100 ? 0 : 10;
   const total = subtotal + shipping;
 
-  const handleUpdateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity >= 1) {
+  const handleUpdateQuantity = (
+    id: string,
+    newQuantity: number,
+    stock: number
+  ) => {
+    if (newQuantity >= 1 && newQuantity <= stock) {
       dispatch(updateQuantity({ id, quantity: newQuantity }));
     }
   };
@@ -95,9 +102,37 @@ export default function CartPage() {
                       <h3 className="text-lg font-semibold text-gray-900">
                         {item.name}
                       </h3>
-                      <p className="text-blue-600 font-medium">
-                        ₹{item.price.toFixed(2)}
-                      </p>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <p className="text-xl font-medium text-gray-900">
+                            ₹
+                            {(item.discounted_price > 0
+                              ? item.discounted_price
+                              : item.price
+                            ).toFixed(2)}
+                          </p>
+                          {item.discounted_price > 0 && (
+                            <>
+                              <p className="text-sm text-gray-500 line-through">
+                                ₹{item.price.toFixed(2)}
+                              </p>
+                              <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                {Math.round(
+                                  ((item.price - item.discounted_price) /
+                                    item.price) *
+                                    100
+                                )}
+                                % OFF
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Price per item •{" "}
+                          {item.quantity > 1 &&
+                            `${item.quantity} items selected`}
+                        </div>
+                      </div>
 
                       <div className="flex items-center gap-4 mt-4">
                         <div className="flex items-center gap-2">
@@ -106,8 +141,13 @@ export default function CartPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity - 1)
+                              handleUpdateQuantity(
+                                item.id,
+                                item.quantity - 1,
+                                item.stock
+                              )
                             }
+                            disabled={item.quantity <= 1}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -119,12 +159,23 @@ export default function CartPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity + 1)
+                              handleUpdateQuantity(
+                                item.id,
+                                item.quantity + 1,
+                                item.stock
+                              )
                             }
+                            disabled={item.quantity >= item.stock}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
+                        {item.stock < 10 && (
+                          <p className="text-xs text-amber-600 font-medium flex items-center">
+                            <span className="inline-block w-1.5 h-1.5 bg-amber-500 rounded-full mr-1"></span>
+                            Only {item.stock} left
+                          </p>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -137,8 +188,34 @@ export default function CartPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-semibold text-gray-900">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹
+                        {(
+                          (item.discounted_price > 0
+                            ? item.discounted_price
+                            : item.price) * item.quantity
+                        ).toFixed(2)}
                       </p>
+                      {item.quantity > 1 && (
+                        <div className="mt-1">
+                          <p className="text-sm text-gray-500">
+                            ₹
+                            {(item.discounted_price > 0
+                              ? item.discounted_price
+                              : item.price
+                            ).toFixed(2)}{" "}
+                            × {item.quantity}
+                          </p>
+                          {item.discounted_price > 0 && (
+                            <p className="text-xs text-green-600">
+                              You save: ₹
+                              {(
+                                (item.price - item.discounted_price) *
+                                item.quantity
+                              ).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -152,6 +229,48 @@ export default function CartPage() {
                   Order Summary
                 </h2>
                 <div className="space-y-4">
+                  {/* Detailed Product Breakdown */}
+                  <div className="space-y-3 mb-6">
+                    <h3 className="font-medium text-gray-700">Order Details</h3>
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex flex-col space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-800 font-medium">
+                            {item.name}
+                          </span>
+                          <span className="text-gray-900 font-medium">
+                            ₹
+                            {(
+                              (item.discounted_price > 0
+                                ? item.discounted_price
+                                : item.price) * item.quantity
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>
+                            {item.quantity} × ₹
+                            {(item.discounted_price > 0
+                              ? item.discounted_price
+                              : item.price
+                            ).toFixed(2)}
+                          </span>
+                          {item.discounted_price > 0 && (
+                            <span className="text-green-600">
+                              Save ₹
+                              {(
+                                (item.price - item.discounted_price) *
+                                item.quantity
+                              ).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="h-px bg-gray-200"></div>
+
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
                     <span>₹{subtotal.toFixed(2)}</span>
@@ -162,7 +281,12 @@ export default function CartPage() {
                       {shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}
                     </span>
                   </div>
-                  <div className="h-px bg-gray-200 my-4"></div>
+                  {shipping === 0 && (
+                    <p className="text-sm text-green-600">
+                      ✓ Free shipping applied (Order above ₹100)
+                    </p>
+                  )}
+                  <div className="h-px bg-gray-200"></div>
                   <div className="flex justify-between text-lg font-semibold text-gray-900">
                     <span>Total</span>
                     <span>₹{total.toFixed(2)}</span>
@@ -177,7 +301,7 @@ export default function CartPage() {
                     Proceed to Checkout
                   </Button>
                   <p className="text-sm text-gray-500 text-center mt-4">
-                    Free shipping on orders over $100
+                    Free shipping on orders over ₹100
                   </p>
                 </div>
               </div>

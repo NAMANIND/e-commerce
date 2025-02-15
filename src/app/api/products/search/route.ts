@@ -16,12 +16,18 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort") || "relevance";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
+    const is_featured = searchParams.get("is_featured") === "true";
     const offset = (page - 1) * limit;
 
     let supabaseQuery = supabase
       .from("products")
       .select("*", { count: "exact" });
     // .eq("status", "published");
+
+    // Featured filter
+    if (is_featured) {
+      supabaseQuery = supabaseQuery.eq("is_featured", true);
+    }
 
     // Full-text search on name and description
     if (query) {

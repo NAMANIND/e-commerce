@@ -249,14 +249,15 @@ export function ProductForm({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           <Switch
+            id="is_featured"
             checked={formData.is_featured}
             onCheckedChange={(checked) =>
               setFormData({ ...formData, is_featured: checked })
             }
           />
-          <Label>Featured Product</Label>
+          <Label htmlFor="is_featured">Feature this product on homepage</Label>
         </div>
 
         <div className="space-y-4 border-t pt-4">

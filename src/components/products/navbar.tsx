@@ -9,7 +9,6 @@ import { useState } from "react";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const cartItems = useSelector((state: RootState) => state.cart.items);
 
   const totalItems = cartItems.reduce(
@@ -36,18 +35,16 @@ export function Navbar() {
               >
                 All Products
               </Link>
-              <Link
-                href="/categories"
-                className="text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                Categories
-              </Link>
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                <Search className="h-5 w-5" />
-              </button>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  className="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              </div>
+
               <Link href="/cart" className="relative group">
                 <ShoppingBag className="h-6 w-6 text-gray-600 group-hover:text-blue-600 transition-colors" />
                 {totalItems > 0 && (
@@ -96,24 +93,6 @@ export function Navbar() {
           </div>
         </div>
       </nav>
-
-      {/* Search Bar */}
-      <div
-        className={`fixed top-16 left-0 right-0 bg-white border-b transform transition-transform duration-200 ease-in-out ${
-          isSearchOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          </div>
-        </div>
-      </div>
 
       {/* Spacer for fixed navbar */}
       <div className="h-16" />

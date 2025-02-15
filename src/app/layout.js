@@ -3,7 +3,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "react-redux";
-import store from "@/store/store";
+import store, { persistor } from "@/store/store";
+import { PersistGate } from "redux-persist/integration/react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -24,18 +25,23 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable}  antialiased text-black bg-white`}
       >
         <Provider store={store}>
-          {children}
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
+          <PersistGate
+            loading={<div>Loading saved cart...</div>}
+            persistor={persistor}
+          >
+            {children}
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+          </PersistGate>
         </Provider>
       </body>
     </html>

@@ -76,11 +76,12 @@ export async function POST(request: Request) {
       sku,
       weight,
       dimensions,
+      discount_percentage,
     } = body;
 
     if (!name || !price || !category_id) {
       return NextResponse.json(
-        { success: false, error: "Name, price and category are required" },
+        { success: false, error: "Name, price, and category are required" },
         { status: 400 }
       );
     }
@@ -106,6 +107,8 @@ export async function POST(request: Request) {
           weight,
           dimensions,
           slug,
+          discount_percentage,
+          discounted_price: price - (price * discount_percentage) / 100, // Calculate discounted price
         },
       ])
       .select(
@@ -146,15 +149,15 @@ export async function PUT(request: Request) {
       category_id,
       image_url,
       is_featured,
-      is_active,
       sku,
       weight,
       dimensions,
+      discount_percentage,
     } = body;
 
     if (!id || !name || !price || !category_id) {
       return NextResponse.json(
-        { success: false, error: "ID, name, price and category are required" },
+        { success: false, error: "ID, name, price, and category are required" },
         { status: 400 }
       );
     }
@@ -175,11 +178,12 @@ export async function PUT(request: Request) {
         category_id,
         image_url,
         is_featured,
-        is_active,
         sku,
         weight,
         dimensions,
         slug,
+        discount_percentage,
+        discounted_price: price - (price * discount_percentage) / 100, // Calculate discounted price
       })
       .eq("id", id)
       .select(

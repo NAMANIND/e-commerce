@@ -3,9 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice } from "@/lib/utils";
 import { useDispatch } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
 import { toast } from "react-toastify";
@@ -32,6 +30,7 @@ interface Product {
   stock: number;
   discounted_price: number;
   discount_percentage: number;
+  is_featured?: boolean;
 }
 
 export function ProductGrid({
@@ -54,7 +53,7 @@ export function ProductGrid({
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      if (featured) params.set("featured", "true");
+      if (featured) params.set("is_featured", "true");
       if (categoryId) params.set("category", categoryId);
       if (query) params.set("q", query);
       if (sort) params.set("sort", sort);
@@ -88,8 +87,10 @@ export function ProductGrid({
       id: product.id,
       name: product.name,
       price: product.price,
+      discounted_price: product.discounted_price,
       quantity: 1,
       image_url: product.image_url,
+      stock: product.stock,
     };
     dispatch(addToCart(cartItem));
     toast.success(`${product.name} added to cart!`);
@@ -144,56 +145,63 @@ export function ProductGrid({
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((product: Product) => (
-        <Link
-          key={product.id}
-          href={`/products/${product.id}`}
-          className="block"
-        >
-          <div className="bg-white rounded-lg overflow-hidden">
-            <div className="aspect-square relative">
-              <Image
-                src={product.image_url}
-                alt={product.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="text-sm text-gray-700">{product.name}</h3>
-              <div className="flex items-center justify-between mt-4">
-                {product.discounted_price < product.price && (
-                  <div className="flex items-center">
-                    <span className="text-sm line-through text-gray-500 mr-2">
+        <div key={product.id} className="group relative">
+          <Link href={`/products/${product.id}`} className="block">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+              <div className="aspect-square relative">
+                <Image
+                  src={product.image_url}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="text-sm font-medium text-gray-800 line-clamp-2 ">
+                  {product.name}
+                  {product.is_featured && (
+                    <span className="ml-2 text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                      Featured
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-2 my-2">
+                  {product.description}
+                </p>
+                <div className="mt-4 flex flex-col space-y-2">
+                  {product.discounted_price < product.price ? (
+                    <div className="flex flex-wrap items-baseline gap-1">
+                      <span className="text-lg font-bold text-gray-900">
+                        ₹{product.discounted_price.toFixed(2)}
+                      </span>
+                      <span className="text-sm line-through text-gray-500">
+                        ₹{product.price.toFixed(2)}
+                      </span>
+                      <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+                        {product.discount_percentage}% off
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-lg font-bold text-gray-900">
                       ₹{product.price.toFixed(2)}
                     </span>
-                    <span className="text-lg font-bold text-red-600">
-                      ₹{product.discounted_price.toFixed(2)}
-                    </span>
-                    <span className="ml-2 text-sm text-green-600">
-                      {product.discount_percentage}% off
-                    </span>
-                  </div>
-                )}
-                {product.discounted_price >= product.price && (
-                  <span className="text-lg font-bold text-gray-900">
-                    ₹{product.price.toFixed(2)}
-                  </span>
-                )}
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleAddToCart(product);
-                  }}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add to Cart
-                </Button>
+                  )}
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleAddToCart(product);
+                    }}
+                    size="sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    {/* <ShoppingCart className="h-4 w-4 mr-2" /> */}
+                    Add to Cart
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        </div>
       ))}
     </div>
   );
