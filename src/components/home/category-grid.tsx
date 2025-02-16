@@ -74,7 +74,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
             </div>
           ))}
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end absolute right-1 top-4">
           <Skeleton className="h-8 w-48 mb-6" />
         </div>
       </div>

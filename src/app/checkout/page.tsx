@@ -26,6 +26,12 @@ interface Address {
   is_default: boolean;
 }
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -36,6 +42,9 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay">(
+    "razorpay"
+  );
 
   const subtotal = cartItems.reduce(
     (total, item) =>
@@ -51,6 +60,17 @@ export default function CheckoutPage() {
       loadAddresses();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Load Razorpay script
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const loadAddresses = async () => {
     try {
@@ -76,6 +96,245 @@ export default function CheckoutPage() {
     }
   };
 
+  const initializeRazorpayPayment = async (orderId: string) => {
+    try {
+      // Get the current session
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        console.error("Session error:", sessionError);
+        throw new Error("Authentication failed: No valid session");
+      }
+
+      // Store the access token for later use
+      const accessToken = sessionData.session.access_token;
+      console.log(
+        "Got access token:",
+        accessToken ? "Token present" : "No token"
+      );
+
+      console.log("Initializing payment for order:", orderId);
+      const response = await fetch(`/api/orders/${orderId}/pay`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      console.log("Payment initialization response:", data);
+
+      if (!response.ok) {
+        console.error("Payment initialization failed:", data);
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+
+      if (!data.data?.key || !data.data?.amount || !data.data?.order_id) {
+        console.error("Invalid payment data received:", data);
+        throw new Error("Invalid payment configuration received");
+      }
+
+      const options = {
+        key: data.data.key,
+        amount: data.data.amount,
+        currency: data.data.currency,
+        name: "Product Dev's",
+        description: `Order Payment (₹${data.data.amount_in_rupees.toFixed(
+          2
+        )})`,
+        order_id: data.data.order_id,
+        handler: async (response: any) => {
+          try {
+            console.log("Payment successful, verifying...", response);
+            console.log(
+              "Using stored access token:",
+              accessToken ? "Token present" : "No token"
+            );
+
+            // Verify the session is still valid before proceeding
+            const { data: currentSession } = await supabase.auth.getSession();
+            if (!currentSession.session) {
+              console.error("Session expired during payment process");
+              throw new Error("Session expired. Please try again.");
+            }
+
+            // Use the current session token instead of the stored one
+            const currentToken = currentSession.session.access_token;
+            console.log(
+              "Current session token:",
+              currentToken ? "Token present" : "No token"
+            );
+
+            // Verify payment
+            console.log("Sending verification request for order:", orderId);
+            console.log("Payment response from Razorpay:", {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              original_order_id: orderId,
+              notes: response.notes,
+            });
+
+            const verifyResponse = await fetch(
+              `/api/orders/${orderId}/verify`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${currentToken}`,
+                },
+                body: JSON.stringify({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                  original_order_id: orderId,
+                }),
+              }
+            );
+
+            const verifyData = await verifyResponse.json();
+            console.log("Payment verification response:", {
+              status: verifyResponse.status,
+              ok: verifyResponse.ok,
+              data: verifyData,
+            });
+
+            if (!verifyResponse.ok) {
+              console.error(
+                "Verification failed with status:",
+                verifyResponse.status
+              );
+              throw new Error(
+                verifyData.error || "Payment verification failed"
+              );
+            }
+
+            // Payment successful
+            dispatch(clearCart());
+            toast.success("Payment successful!");
+            router.push("/profile?tab=orders");
+          } catch (error: any) {
+            console.error("Payment verification error:", {
+              message: error.message,
+              stack: error.stack,
+            });
+            toast.error(error.message || "Payment verification failed");
+            setPlacingOrder(false);
+          }
+        },
+        prefill: {
+          name: addresses.find((addr) => addr.id === selectedAddressId)?.name,
+          contact: addresses.find((addr) => addr.id === selectedAddressId)
+            ?.phone,
+          email: user?.email || undefined,
+        },
+        theme: {
+          color: "#3B82F6",
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("Payment modal dismissed");
+            toast.error("Payment cancelled");
+            setPlacingOrder(false);
+          },
+          escape: false,
+          confirm_close: true,
+        },
+        retry: {
+          enabled: true,
+          max_count: 3,
+          retry_on_error: true,
+        },
+        send_sms_hash: false,
+        remember_customer: false,
+        timeout: 600,
+        config: {
+          display: {
+            blocks: {
+              banks: {
+                name: "All payment methods",
+                instruments: [
+                  { method: "upi" },
+                  { method: "card" },
+                  { method: "netbanking" },
+                  { method: "wallet" },
+                ],
+              },
+            },
+            sequence: ["block.banks"],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
+        },
+        notes: {
+          order_id: orderId,
+          address_id: selectedAddressId,
+          amount_in_rupees: data.data.amount_in_rupees,
+        },
+      };
+
+      console.log("Opening Razorpay with options:", {
+        ...options,
+        key: "HIDDEN",
+      });
+
+      let razorpayInstance: any = null;
+      try {
+        razorpayInstance = new window.Razorpay(options);
+
+        // Add error event handlers
+        razorpayInstance.on("payment.error", function (resp: any) {
+          console.error("Razorpay payment error:", resp);
+          if (resp.error?.code === "SERVER_ERROR") {
+            toast.error("Server error. Please try again in a few moments.");
+          } else {
+            toast.error(resp.error?.description || "Payment failed");
+          }
+          setPlacingOrder(false);
+        });
+
+        razorpayInstance.on("payment.failed", function (resp: any) {
+          console.error("Payment failed:", resp);
+          if (resp.error?.code === "SERVER_ERROR") {
+            toast.error("Server error. Please try again in a few moments.");
+          } else {
+            toast.error(resp.error?.description || "Payment failed");
+          }
+          setPlacingOrder(false);
+        });
+
+        // Add ready event handler
+        razorpayInstance.on("ready", function (resp: any) {
+          console.log("Razorpay SDK ready");
+        });
+
+        // Add payment.captured event handler
+        razorpayInstance.on("payment.captured", function (resp: any) {
+          console.log("Payment captured:", resp);
+        });
+
+        razorpayInstance.open();
+      } catch (error: any) {
+        console.error("Razorpay error:", error);
+        toast.error(error.message || "Failed to initialize payment");
+        setPlacingOrder(false);
+        if (razorpayInstance) {
+          try {
+            razorpayInstance.close();
+          } catch (closeError) {
+            console.error("Error closing Razorpay:", closeError);
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Razorpay error:", error);
+      toast.error(error.message || "Failed to initialize payment");
+      setPlacingOrder(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       toast.error("Please select a delivery address");
@@ -85,10 +344,6 @@ export default function CheckoutPage() {
     setPlacingOrder(true);
     try {
       if (!user) throw new Error("Not authenticated");
-
-      const selectedAddress = addresses.find(
-        (addr) => addr.id === selectedAddressId
-      );
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -102,7 +357,7 @@ export default function CheckoutPage() {
             shipping_cost: shipping,
             total_amount: total,
             payment_status: "pending",
-            payment_method: "cod",
+            payment_method: paymentMethod,
             notes: "Order placed via website",
           },
         ])
@@ -125,14 +380,17 @@ export default function CheckoutPage() {
 
       if (itemsError) throw itemsError;
 
-      // Clear cart
-      dispatch(clearCart());
-
-      toast.success("Order placed successfully!");
-      router.push("/profile?tab=orders");
-    } catch (error) {
+      if (paymentMethod === "razorpay") {
+        await initializeRazorpayPayment(order.id);
+      } else {
+        // COD flow
+        dispatch(clearCart());
+        toast.success("Order placed successfully!");
+        router.push("/profile?tab=orders");
+      }
+    } catch (error: any) {
       console.error("Error placing order:", error);
-      toast.error("Failed to place order");
+      toast.error(error.message || "Failed to place order");
     } finally {
       setPlacingOrder(false);
     }
@@ -348,6 +606,66 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {/* Payment Method Selection */}
+                    <div className="mt-6">
+                      <h3 className="font-medium text-gray-900 mb-4">
+                        Payment Method
+                      </h3>
+                      <div className="space-y-3">
+                        <div
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            paymentMethod === "razorpay"
+                              ? "border-blue-500 bg-blue-50"
+                              : "hover:border-gray-400"
+                          }`}
+                          onClick={() => setPaymentMethod("razorpay")}
+                        >
+                          <div className="flex items-center">
+                            <input
+                              type="radio"
+                              checked={paymentMethod === "razorpay"}
+                              onChange={() => setPaymentMethod("razorpay")}
+                              className="h-4 w-4 text-blue-600"
+                            />
+                            <label className="ml-3">
+                              <span className="block text-sm font-medium text-gray-900">
+                                Pay Online (Razorpay)
+                              </span>
+                              <span className="block text-sm text-gray-500">
+                                Credit/Debit Card, UPI, Netbanking
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                            paymentMethod === "cod"
+                              ? "border-blue-500 bg-blue-50"
+                              : "hover:border-gray-400"
+                          }`}
+                          onClick={() => setPaymentMethod("cod")}
+                        >
+                          <div className="flex items-center">
+                            <input
+                              type="radio"
+                              checked={paymentMethod === "cod"}
+                              onChange={() => setPaymentMethod("cod")}
+                              className="h-4 w-4 text-blue-600"
+                            />
+                            <label className="ml-3">
+                              <span className="block text-sm font-medium text-gray-900">
+                                Cash on Delivery
+                              </span>
+                              <span className="block text-sm text-gray-500">
+                                Pay when you receive
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex gap-4 mt-6">
                       <Button
                         variant="outline"
@@ -361,7 +679,13 @@ export default function CheckoutPage() {
                         onClick={handlePlaceOrder}
                         disabled={placingOrder}
                       >
-                        {placingOrder ? "Placing Order..." : "Place Order"}
+                        {placingOrder
+                          ? "Processing..."
+                          : `Pay ${
+                              paymentMethod === "cod"
+                                ? "(Cash on Delivery)"
+                                : "Now"
+                            }`}
                       </Button>
                     </div>
                   </div>
