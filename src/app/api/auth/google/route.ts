@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import {
   handleApiRoute,
@@ -22,11 +22,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (signInError) {
-      return errorResponse(signInError);
+      return NextResponse.json({ error: signInError.message }, { status: 401 });
     }
 
     if (!supabaseUser) {
-      return errorResponse("Authentication failed");
+      return NextResponse.json(
+        { error: "Authentication failed" },
+        { status: 401 }
+      );
     }
 
     // Check if user exists in our users table
@@ -51,19 +54,19 @@ export async function POST(request: NextRequest) {
         .insert([newUser]);
 
       if (createError) {
-        return errorResponse(createError);
+        return NextResponse.json(
+          { error: createError.message },
+          { status: 500 }
+        );
       }
 
-      // Send welcome email
-      try {
-        await sendWelcomeEmail({
-          ...supabaseUser,
-          ...newUser,
-        } as User);
-      } catch (emailError) {
+      // Send welcome email - don't wait for it and don't fail if it fails
+      sendWelcomeEmail({
+        ...supabaseUser,
+        ...newUser,
+      } as User).catch((emailError) => {
         console.error("Failed to send welcome email:", emailError);
-        // Don't fail the signup if email fails
-      }
+      });
     }
 
     // Get session for client
@@ -73,10 +76,13 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getSession();
 
     if (sessionError) {
-      return errorResponse(sessionError);
+      return NextResponse.json(
+        { error: sessionError.message },
+        { status: 500 }
+      );
     }
 
-    return successResponse({
+    return NextResponse.json({
       session,
       user: {
         ...supabaseUser,
@@ -89,6 +95,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Google auth error:", error);
-    return errorResponse("Authentication failed");
+    return NextResponse.json(
+      { error: "Authentication failed" },
+      { status: 500 }
+    );
   }
 }

@@ -12,12 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-
-interface OrderStats {
-  user_id: string;
-  count: number;
-  sum: number;
-}
+import { User } from "@supabase/supabase-js";
 
 interface Customer {
   id: string;
@@ -43,10 +38,7 @@ export default function CustomersPage() {
 
   const loadCustomers = async () => {
     try {
-      console.log("Fetching customers...");
-
       // Get all users from auth.users
-
       const { data: usersData, error: usersError } =
         await supabase.auth.admin.listUsers();
 
@@ -58,13 +50,11 @@ export default function CustomersPage() {
         return;
       }
 
-      if (!usersData || usersData.length === 0) {
+      if (!usersData?.users || usersData.users.length === 0) {
         console.log("No users found");
         setCustomers([]);
         return;
       }
-
-      console.log("Users fetched:", usersData);
 
       // Get all orders
       const { data: ordersData, error: ordersError } = await supabase
@@ -76,7 +66,10 @@ export default function CustomersPage() {
       }
 
       // Calculate stats per user
-      const userStats = new Map();
+      const userStats = new Map<
+        string,
+        { orders_count: number; total_spent: number }
+      >();
       ordersData?.forEach((order) => {
         const stats = userStats.get(order.user_id) || {
           orders_count: 0,
@@ -88,17 +81,19 @@ export default function CustomersPage() {
       });
 
       // Combine user data with their stats
-      const customersWithStats: Customer[] = usersData.map((user) => ({
+      const customersWithStats: Customer[] = usersData.users.map((user) => ({
         id: user.id,
         email: user.email || "",
         created_at: user.created_at,
         last_sign_in_at: user.last_sign_in_at || null,
-        user_metadata: user.raw_user_meta_data || {},
+        user_metadata: {
+          full_name: user.user_metadata?.full_name,
+          phone: user.user_metadata?.phone,
+        },
         orders_count: userStats.get(user.id)?.orders_count || 0,
         total_spent: userStats.get(user.id)?.total_spent || 0,
       }));
 
-      console.log("Final transformed customers:", customersWithStats);
       setCustomers(customersWithStats);
     } catch (error: any) {
       console.error("Error in loadCustomers:", {

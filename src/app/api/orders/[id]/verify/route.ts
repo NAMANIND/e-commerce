@@ -8,10 +8,9 @@ import {
 import { authenticateUser } from "@/lib/auth";
 import crypto from "crypto";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type NextRequestContext = { params: Promise<{ id: string }> };
+
+export async function POST(request: NextRequest, context: NextRequestContext) {
   if (!process.env.RAZORPAY_KEY_SECRET) {
     console.error("Razorpay secret key not configured");
     return errorResponse("Payment verification not configured", 500);
@@ -21,6 +20,7 @@ export async function POST(
     request,
     async () => {
       try {
+        const params = await context.params;
         // Log request details
         console.log("Verify endpoint called:", {
           method: request.method,

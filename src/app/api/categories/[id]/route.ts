@@ -1,16 +1,13 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import {
-  handleApiRoute,
-  successResponse,
-  errorResponse,
-} from "@/lib/middleware";
+import { authenticateUser } from "@/lib/auth";
+import { z } from "zod";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(request, async () => {
+type NextRequestContext = { params: Promise<{ id: string }> };
+
+export async function GET(request: NextRequest, context: NextRequestContext) {
+  try {
+    const params = await context.params;
     const includeProducts =
       request.nextUrl.searchParams.get("include_products") === "true";
 
@@ -21,101 +18,99 @@ export async function GET(
       .single();
 
     if (error) {
-      return errorResponse(error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
     if (!category) {
-      return errorResponse("Category not found", 404);
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 404 }
+      );
     }
 
-    return successResponse(category);
-  });
+    return NextResponse.json(category, { status: 200 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const updates = await request.json();
+export async function PUT(request: NextRequest, context: NextRequestContext) {
+  try {
+    const user = await authenticateUser(request);
+    if (user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
-      // Generate id from name if name is being updated
-      const id = updates.name
-        ? updates.name.toLowerCase().replace(/\s+/g, "-")
-        : updates.id;
+    const params = await context.params;
+    const body = await request.json();
 
-      const { data: category, error } = await supabase
-        .from("categories")
-        .update({
-          name: updates.name,
-          id,
-          description: updates.description,
-          image_url: updates.image_url,
-          parent_id: updates.parent_id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", params.id)
-        .select()
-        .single();
+    const payload = await z
+      .object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        image_url: z.string().url().optional(),
+        parent_id: z.string().optional(),
+      })
+      .parseAsync(body);
 
-      if (error) {
-        return errorResponse(error);
-      }
-      if (!category) {
-        return errorResponse("Category not found", 404);
-      }
+    // Generate id from name if name is being updated
+    const id = payload.name.toLowerCase().replace(/\s+/g, "-");
 
-      return successResponse(category);
-    },
-    { requireAdmin: true }
-  );
+    const { data: category, error } = await supabase
+      .from("categories")
+      .update({
+        ...payload,
+        id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!category) {
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(category, { status: 200 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: NextRequestContext
 ) {
-  return handleApiRoute(
-    request,
-    async () => {
-      // Check if category has products
-      const { count } = await supabase
-        .from("products")
-        .select("*", { count: "exact" })
-        .eq("category_id", params.id);
+  try {
+    const user = await authenticateUser(request);
+    if (user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
-      if (count && count > 0) {
-        return errorResponse(
-          "Cannot delete category with existing products",
-          400
-        );
-      }
+    const params = await context.params;
 
-      // Check if category has subcategories
-      const { count: subCount } = await supabase
-        .from("categories")
-        .select("*", { count: "exact" })
-        .eq("parent_id", params.id);
+    const { error } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", params.id);
 
-      if (subCount && subCount > 0) {
-        return errorResponse(
-          "Cannot delete category with existing subcategories",
-          400
-        );
-      }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-      const { error } = await supabase
-        .from("categories")
-        .delete()
-        .eq("id", params.id);
-
-      if (error) {
-        return errorResponse(error);
-      }
-
-      return successResponse({ message: "Category deleted successfully" });
-    },
-    { requireAdmin: true }
-  );
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }

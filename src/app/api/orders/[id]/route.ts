@@ -1,88 +1,109 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import {
-  handleApiRoute,
-  successResponse,
-  errorResponse,
-} from "@/lib/middleware";
 import { authenticateUser } from "@/lib/auth";
+type NextRequestContext = { params: Promise<{ id: string }> };
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const user = await authenticateUser(request);
+export async function GET(request: NextRequest, context: NextRequestContext) {
+  try {
+    const user = await authenticateUser(request);
+    const params = await context.params;
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .select(
-          "*, shipping_address(*), items:order_items(*, product:products(*))"
-        )
-        .eq("id", params.id)
-        .single();
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select(
+        "*, shipping_address(*), items:order_items(*, product:products(*))"
+      )
+      .eq("id", params.id)
+      .single();
 
-      if (error) {
-        return errorResponse(error);
-      }
-      if (!order) {
-        return errorResponse("Order not found", 404);
-      }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
 
-      // Users can only view their own orders, admins can view all
-      if (user.role !== "admin" && order.user_id !== user.id) {
-        return errorResponse("Unauthorized", 403);
-      }
+    // Users can only view their own orders, admins can view all
+    if (user.role !== "admin" && order.user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
-      return successResponse(order);
-    },
-    { requireAuth: true }
-  );
+    return NextResponse.json(order, { status: 200 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const updates = await request.json();
+export async function PUT(request: NextRequest, context: NextRequestContext) {
+  try {
+    const user = await authenticateUser(request);
+    const params = await context.params;
+    const body = await request.json();
 
-      // Only allow updating specific fields
-      const allowedUpdates = {
-        status: updates.status,
-        tracking_number: updates.tracking_number,
-        tracking_url: updates.tracking_url,
-        notes: updates.notes,
-        updated_at: new Date().toISOString(),
-      };
+    // First check if order exists and user has permission
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("user_id, status")
+      .eq("id", params.id)
+      .single();
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .update(allowedUpdates)
-        .eq("id", params.id)
-        .select(
-          "*, shipping_address(*), items:order_items(*, product:products(*))"
-        )
-        .single();
+    if (fetchError || !order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
 
-      if (error) {
-        return errorResponse(error);
-      }
-      if (!order) {
-        return errorResponse("Order not found", 404);
-      }
+    // Only admin or order owner can update
+    if (user.role !== "admin" && order.user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
-      // TODO: Send order status update email
-      // await sendOrderStatusUpdateEmail(order);
+    const { data: updatedOrder, error } = await supabase
+      .from("orders")
+      .update(body)
+      .eq("id", params.id)
+      .select(
+        "*, shipping_address(*), items:order_items(*, product:products(*))"
+      )
+      .single();
 
-      return successResponse(order);
-    },
-    { requireAdmin: true }
-  );
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(updatedOrder, { status: 200 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
-// No DELETE endpoint - orders should never be deleted, only cancelled
+export async function DELETE(
+  request: NextRequest,
+  context: NextRequestContext
+) {
+  try {
+    const user = await authenticateUser(request);
+    if (user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const params = await context.params;
+
+    const { error } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", params.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
+}

@@ -14,10 +14,9 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type NextRequestContext = { params: Promise<{ id: string }> };
+
+export async function POST(request: NextRequest, context: NextRequestContext) {
   if (
     !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
     !process.env.RAZORPAY_KEY_SECRET
@@ -26,6 +25,7 @@ export async function POST(
     return errorResponse("Payment gateway not configured", 500);
   }
 
+  const params = await context.params;
   const orderId = params.id; // Store params.id early to avoid Next.js warning
 
   try {
@@ -154,11 +154,9 @@ export async function POST(
 }
 
 // Webhook to handle Razorpay payment callbacks
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: NextRequestContext) {
   try {
+    const params = await context.params;
     const payload = await request.json();
     const signature = request.headers.get("x-razorpay-signature");
 

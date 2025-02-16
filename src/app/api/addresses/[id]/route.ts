@@ -1,159 +1,167 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import {
-  handleApiRoute,
-  successResponse,
-  errorResponse,
-} from "@/lib/middleware";
 import { authenticateUser } from "@/lib/auth";
+import { z } from "zod";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const user = await authenticateUser(request);
+type NextRequestContext = { params: Promise<{ id: string }> };
 
-      const { data: address, error } = await supabase
-        .from("addresses")
-        .select("*")
-        .eq("id", params.id)
-        .single();
+const addressSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone is required"),
+  address_line1: z.string().min(1, "Address line 1 is required"),
+  address_line2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  postal_code: z.string().min(1, "Postal code is required"),
+  country: z.string().min(1, "Country is required"),
+  is_default: z.boolean().optional(),
+});
 
-      if (error) {
-        return errorResponse(error);
-      }
-      if (!address) {
-        return errorResponse("Address not found", 404);
-      }
+export async function GET(request: NextRequest, context: NextRequestContext) {
+  try {
+    const user = await authenticateUser(request);
+    const params = await context.params;
 
-      // Users can only view their own addresses
-      if (address.user_id !== user.id) {
-        return errorResponse("Unauthorized", 403);
-      }
+    const { data: address, error } = await supabase
+      .from("addresses")
+      .select("*")
+      .eq("id", params.id)
+      .single();
 
-      return successResponse(address);
-    },
-    { requireAuth: true }
-  );
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!address) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    // Users can only view their own addresses
+    if (address.user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    return NextResponse.json(address, { status: 200 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const user = await authenticateUser(request);
-      const updates = await request.json();
+export async function PUT(request: NextRequest, context: NextRequestContext) {
+  try {
+    const user = await authenticateUser(request);
+    const params = await context.params;
+    const body = await request.json();
 
-      // Verify ownership
-      const { data: existing, error: fetchError } = await supabase
+    // Validate request body
+    const payload = await addressSchema.parseAsync(body);
+
+    // Verify ownership
+    const { data: existing, error: fetchError } = await supabase
+      .from("addresses")
+      .select("user_id")
+      .eq("id", params.id)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+    if (existing.user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // If setting as default, unset other defaults
+    if (payload.is_default) {
+      await supabase
         .from("addresses")
-        .select("user_id")
-        .eq("id", params.id)
-        .single();
+        .update({ is_default: false })
+        .eq("user_id", user.id)
+        .eq("is_default", true);
+    }
 
-      if (fetchError || !existing) {
-        return errorResponse("Address not found", 404);
-      }
-      if (existing.user_id !== user.id) {
-        return errorResponse("Unauthorized", 403);
-      }
+    const { data: address, error } = await supabase
+      .from("addresses")
+      .update({
+        ...payload,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.id)
+      .select()
+      .single();
 
-      // If setting as default, unset other defaults
-      if (updates.is_default) {
-        await supabase
-          .from("addresses")
-          .update({ is_default: false })
-          .eq("user_id", user.id)
-          .eq("is_default", true);
-      }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-      const { data: address, error } = await supabase
-        .from("addresses")
-        .update({
-          name: updates.name,
-          phone: updates.phone,
-          address_line1: updates.address_line1,
-          address_line2: updates.address_line2,
-          city: updates.city,
-          state: updates.state,
-          postal_code: updates.postal_code,
-          country: updates.country,
-          is_default: updates.is_default,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", params.id)
-        .select()
-        .single();
-
-      if (error) {
-        return errorResponse(error);
-      }
-
-      return successResponse(address);
-    },
-    { requireAuth: true }
-  );
+    return NextResponse.json(address, { status: 200 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors[0].message },
+        { status: 400 }
+      );
+    }
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: NextRequestContext
 ) {
-  return handleApiRoute(
-    request,
-    async () => {
-      const user = await authenticateUser(request);
+  try {
+    const user = await authenticateUser(request);
+    const params = await context.params;
 
-      // Verify ownership
-      const { data: address, error: fetchError } = await supabase
+    // Verify ownership
+    const { data: address, error: fetchError } = await supabase
+      .from("addresses")
+      .select("user_id, is_default")
+      .eq("id", params.id)
+      .single();
+
+    if (fetchError || !address) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+    if (address.user_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // If this is the default address, set another address as default
+    if (address.is_default) {
+      const { data: otherAddress } = await supabase
         .from("addresses")
-        .select("user_id, is_default")
-        .eq("id", params.id)
+        .select("id")
+        .eq("user_id", user.id)
+        .neq("id", params.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .single();
 
-      if (fetchError || !address) {
-        return errorResponse("Address not found", 404);
-      }
-      if (address.user_id !== user.id) {
-        return errorResponse("Unauthorized", 403);
-      }
-
-      // If this is the default address, set another address as default
-      if (address.is_default) {
-        const { data: otherAddress } = await supabase
+      if (otherAddress) {
+        await supabase
           .from("addresses")
-          .select("id")
-          .eq("user_id", user.id)
-          .neq("id", params.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (otherAddress) {
-          await supabase
-            .from("addresses")
-            .update({ is_default: true })
-            .eq("id", otherAddress.id);
-        }
+          .update({ is_default: true })
+          .eq("id", otherAddress.id);
       }
+    }
 
-      const { error } = await supabase
-        .from("addresses")
-        .delete()
-        .eq("id", params.id);
+    const { error } = await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", params.id);
 
-      if (error) {
-        return errorResponse(error);
-      }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-      return successResponse({ message: "Address deleted successfully" });
-    },
-    { requireAuth: true }
-  );
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    const serialized =
+      error instanceof Error ? error.message : "An error occurred";
+    return NextResponse.json({ error: serialized }, { status: 500 });
+  }
 }

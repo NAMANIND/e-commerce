@@ -40,7 +40,7 @@ function ProductsChartComponent() {
         const productSales = orderItems.reduce(
           (acc: Record<string, number>, item) => {
             const productName =
-              item.products?.name || `Product ${item.product_id}`;
+              item.products[0]?.name || `Product ${item.product_id}`;
             acc[productName] = (acc[productName] || 0) + (item.quantity || 0);
             return acc;
           },
