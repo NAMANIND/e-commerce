@@ -193,6 +193,16 @@ export function ProductGrid({
                       </Badge>
                     </div>
                   )}
+                  {product.is_featured && (
+                    <div className="absolute top-2 left-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-800 text-xs"
+                      >
+                        Featured
+                      </Badge>
+                    </div>
+                  )}
                   {remainingStock > 0 && remainingStock <= 5 && (
                     <div className="absolute top-2 right-2">
                       <Badge
@@ -208,16 +218,12 @@ export function ProductGrid({
                   <h3 className="text-sm font-medium text-gray-800 line-clamp-2 flex items-start justify-between gap-2">
                     <span>
                       {product.name}
-                      {product.is_featured && (
-                        <span className="ml-2 text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full shadow-sm ">
-                          Featured
-                        </span>
-                      )}
-                      {remainingStock > 0 && remainingStock <= 5 && (
+
+                      {/* {remainingStock > 0 && remainingStock <= 5 && (
                         <span className="text-xs text-amber-600 text-center ml-2 font-medium bg-amber-50 px-1.5 py-0.5 rounded-full shadow-sm ">
                           Low stock
                         </span>
-                      )}
+                      )} */}
                       {cartQuantity > 0 && (
                         <span className="text-xs text-green-600 text-center ml-2 font-medium bg-green-50 px-1.5 py-0.5 rounded-full shadow-sm ">
                           {cartQuantity} in cart

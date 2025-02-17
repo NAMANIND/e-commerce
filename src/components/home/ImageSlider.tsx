@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const images = [
-  "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1470&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=1470&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?q=80&w=1470&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=1475&auto=format&fit=crop", // Colorful toy blocks
+  "https://images.unsplash.com/photo-1596073419667-9d77d59f033f?q=80&w=1435&auto=format&fit=crop", // Indoor plants
+  "https://images.unsplash.com/photo-1581557991964-125469da3b8a?q=80&w=1470&auto=format&fit=crop", // Educational toys
 ];
 
 const ROTATION_INTERVAL = 5000; // 5 seconds between slides
@@ -107,7 +107,11 @@ export function ImageSlider() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-3xl sm:text-4xl font-bold"
           >
-            Featured Collection {currentIndex + 1}
+            {currentIndex === 0
+              ? "Educational Toys Collection"
+              : currentIndex === 1
+              ? "Indoor Plants Collection"
+              : "Kids Development Toys"}
           </motion.h2>
         </div>
 
@@ -119,7 +123,11 @@ export function ImageSlider() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-lg sm:text-xl max-w-xl text-center"
           >
-            Discover our latest products with exceptional quality and design.
+            {currentIndex === 0
+              ? "Discover our range of educational toys that make learning fun and engaging."
+              : currentIndex === 1
+              ? "Transform your space with our selection of beautiful indoor plants."
+              : "Help your child grow with our carefully curated developmental toys."}
           </motion.p>
 
           <motion.div
@@ -128,7 +136,7 @@ export function ImageSlider() {
             transition={{ delay: 0.4 }}
           >
             <Button className="bg-white text-gray-900 hover:bg-gray-200 px-6 py-2 rounded-full">
-              Shop Now
+              {currentIndex === 1 ? "View Plants" : "Shop Toys"}
             </Button>
           </motion.div>
         </div>

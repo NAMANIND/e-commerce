@@ -101,7 +101,7 @@ export default function HomePage() {
       {/* Trust Signals Section - New section to build confidence */}
       <section className="py-8 bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center">
               <Truck className="h-8 w-8 text-blue-600 mb-3" />
               <h3 className="text-sm font-medium text-gray-900">
@@ -118,13 +118,13 @@ export default function HomePage() {
                 100% protected transactions
               </p>
             </div>
-            <div className="flex flex-col items-center text-center">
+            {/* <div className="flex flex-col items-center text-center">
               <RotateCcw className="h-8 w-8 text-blue-600 mb-3" />
               <h3 className="text-sm font-medium text-gray-900">
                 Easy Returns
               </h3>
               <p className="text-xs text-gray-500 mt-1">Within 30 days</p>
-            </div>
+            </div> */}
             <div className="flex flex-col items-center text-center">
               <MessageCircle className="h-8 w-8 text-blue-600 mb-3" />
               <h3 className="text-sm font-medium text-gray-900">

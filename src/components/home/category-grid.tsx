@@ -65,7 +65,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
 
   if (loading) {
     return (
-      <div className="relative mx-auto max-w-7xl px-4 py-8">
+      <div className="relative mx-auto max-w-7xl px-4">
         <div className="flex space-x-6 overflow-x-auto pb-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex flex-col items-center">
@@ -102,7 +102,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
   }
 
   return (
-    <div className="relative mx-auto max-w-7xl px-4 py-8">
+    <div className="relative mx-auto max-w-7xl px-4">
       <div
         ref={sliderRef}
         className="flex space-x-4 sm:space-x-6 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
@@ -122,7 +122,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>
-            <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+            <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors capitalize">
               {category.name}
             </span>
           </Link>

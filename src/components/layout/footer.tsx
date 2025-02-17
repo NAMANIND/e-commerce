@@ -11,6 +11,8 @@ import {
   CreditCard,
   ShieldCheck,
   HelpCircle,
+  Wallet,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -54,7 +56,7 @@ export function Footer() {
                 alt="E-commerce Logo"
                 width={120}
                 height={40}
-                className="brightness-0 invert" // Makes dark logo white
+                className="brightness-0 invert"
               />
             </Link>
             <p className="text-sm text-gray-400">
@@ -168,7 +170,7 @@ export function Footer() {
                   Track Your Order
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href="/returns"
                   className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
@@ -176,7 +178,7 @@ export function Footer() {
                   <ShieldCheck className="h-4 w-4" />
                   Returns & Refunds
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   href="/wishlist"
@@ -245,44 +247,9 @@ export function Footer() {
             </div>
             <div className="order-1 md:order-2">
               <div className="flex items-center gap-6">
-                <span className="text-sm text-gray-500">We Accept:</span>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src="/visa.svg"
-                    alt="Visa"
-                    width={32}
-                    height={20}
-                    className="opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                  <Image
-                    src="/mastercard.svg"
-                    alt="Mastercard"
-                    width={32}
-                    height={20}
-                    className="opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                  <Image
-                    src="/amex.svg"
-                    alt="American Express"
-                    width={32}
-                    height={20}
-                    className="opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                  <Image
-                    src="/paypal.svg"
-                    alt="PayPal"
-                    width={32}
-                    height={20}
-                    className="opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                  <Image
-                    src="/apple-pay.svg"
-                    alt="Apple Pay"
-                    width={32}
-                    height={20}
-                    className="opacity-70 hover:opacity-100 transition-opacity"
-                  />
-                </div>
+                <span className="text-sm text-gray-500">
+                  We Accept: All Payment Methods
+                </span>
               </div>
             </div>
           </div>
@@ -309,12 +276,12 @@ export function Footer() {
             >
               Shipping Policy
             </Link>
-            <Link
+            {/* <Link
               href="/returns"
               className="hover:text-gray-300 transition-colors"
             >
               Return Policy
-            </Link>
+            </Link> */}
             <Link
               href="/accessibility"
               className="hover:text-gray-300 transition-colors"
