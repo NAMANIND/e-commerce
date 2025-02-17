@@ -106,7 +106,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
           />
           {remainingStock === 0 && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <Badge variant="destructive" className="text-lg">
+              <Badge
+                variant="destructive"
+                className="text-lg font-medium px-3 py-1 bg-red-100 text-red-800 border border-red-200 shadow-sm rounded-full animate-pulse"
+              >
                 Out of Stock
               </Badge>
             </div>

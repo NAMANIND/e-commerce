@@ -8,11 +8,12 @@ import OrderHistory from "@/components/profile/order-history";
 import ProfileDetails from "@/components/profile/profile-details";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/products/navbar";
+import { UserIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 
 export default function ProfileWrapper() {
   const { user, loading, requireAuth } = useAuth();
   const searchParams = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "profile";
+  const defaultTab = searchParams.get("tab") || "account";
 
   useEffect(() => {
     requireAuth();
@@ -46,46 +47,61 @@ export default function ProfileWrapper() {
           <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm">
-          <Tabs defaultValue={defaultTab} className="w-full">
-            <div className="border-b border-gray-200">
-              <TabsList className="flex h-auto p-0 bg-transparent">
-                <TabsTrigger
-                  value="profile"
-                  className="relative h-12 px-4 font-medium text-sm text-gray-500 data-[state=active]:text-indigo-600 data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 transition-colors hover:text-gray-700"
-                >
-                  Profile Details
-                </TabsTrigger>
-                <TabsTrigger
-                  value="addresses"
-                  className="relative h-12 px-4 font-medium text-sm text-gray-500 data-[state=active]:text-indigo-600 data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 transition-colors hover:text-gray-700"
-                >
-                  My Addresses
-                </TabsTrigger>
-                <TabsTrigger
-                  value="orders"
-                  className="relative h-12 px-4 font-medium text-sm text-gray-500 data-[state=active]:text-indigo-600 data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 transition-colors hover:text-gray-700"
-                >
-                  Order History
-                </TabsTrigger>
-              </TabsList>
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <div className="border-b border-gray-200 mb-8">
+            <TabsList className="flex h-auto p-0 bg-transparent">
+              <TabsTrigger
+                value="account"
+                className="relative h-12 px-8 font-medium text-sm text-gray-500 data-[state=active]:text-indigo-600 data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 transition-colors hover:text-gray-700 flex items-center space-x-2"
+              >
+                <UserIcon className="h-5 w-5" />
+                <span>Account Details</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="orders"
+                className="relative h-12 px-8 font-medium text-sm text-gray-500 data-[state=active]:text-indigo-600 data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 transition-colors hover:text-gray-700 flex items-center space-x-2"
+              >
+                <ShoppingBagIcon className="h-5 w-5" />
+                <span>Order History</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="account" className="mt-0 outline-none space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile and Personal Information */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h2 className="text-xl font-semibold mb-6">
+                    Personal Information
+                  </h2>
+                  <ProfileDetails user={user} />
+                </div>
+              </div>
+
+              {/* Addresses Section */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <AddressManager userId={user.id} />
+                </div>
+              </div>
             </div>
+          </TabsContent>
 
-            <div className="p-8">
-              <TabsContent value="profile" className="mt-0 outline-none">
-                <ProfileDetails user={user} />
-              </TabsContent>
-
-              <TabsContent value="addresses" className="mt-0 outline-none">
-                <AddressManager userId={user.id} />
-              </TabsContent>
-
-              <TabsContent value="orders" className="mt-0 outline-none">
-                <OrderHistory userId={user.id} />
-              </TabsContent>
+          <TabsContent value="orders" className="mt-0 outline-none">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Order History</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    View and track all your orders in one place
+                  </p>
+                </div>
+              </div>
+              <OrderHistory userId={user.id} />
             </div>
-          </Tabs>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
