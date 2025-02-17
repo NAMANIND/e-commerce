@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { toast } from "react-toastify";
+
 interface OrderWithUser {
   id: string;
   created_at: string;
@@ -43,6 +45,7 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -128,6 +131,32 @@ export default function OrdersPage() {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(
+        orders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus as any } : order
+        )
+      );
+
+      toast.success("Order status updated");
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast.error("Failed to update order status");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
@@ -200,12 +229,58 @@ export default function OrdersPage() {
                 </TableCell>
                 <TableCell>{order.user_email}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={`${getStatusColor(order.status)} capitalize`}
-                    variant="secondary"
+                  <Select
+                    value={order.status}
+                    onValueChange={(value) =>
+                      handleStatusChange(order.id, value)
+                    }
+                    disabled={updatingOrderId === order.id}
                   >
-                    {order.status}
-                  </Badge>
+                    <SelectTrigger
+                      className={`w-[140px] ${getStatusColor(order.status)}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* <span
+                          className={`h-2 w-2 rounded-full ${
+                            order.status === "completed"
+                              ? "bg-green-500"
+                              : order.status === "processing"
+                              ? "bg-blue-500"
+                              : order.status === "cancelled"
+                              ? "bg-red-500"
+                              : "bg-yellow-500"
+                          }`}
+                        /> */}
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                          Pending
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="processing">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          Processing
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-green-500" />
+                          Completed
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="cancelled">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500" />
+                          Cancelled
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <Badge

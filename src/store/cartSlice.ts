@@ -6,6 +6,7 @@ interface CartItem {
   price: number;
   discounted_price: number;
   quantity: number;
+  discount_percentage: number;
   stock: number;
   image_url?: string; // Optional since some items might not have images
 }

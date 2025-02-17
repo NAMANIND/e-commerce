@@ -18,6 +18,14 @@ interface ProductData {
   sales: number;
 }
 
+interface OrderItem {
+  quantity: number;
+  product_id: string;
+  products: {
+    name: string;
+  };
+}
+
 function ProductsChartComponent() {
   const [data, setData] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,14 +33,14 @@ function ProductsChartComponent() {
   useEffect(() => {
     async function fetchProductData() {
       try {
-        // Get order items with product details
-        const { data: orderItems } = await supabase.from("order_items").select(`
+        const { data: orderItems } = (await supabase.from("order_items")
+          .select(`
             quantity,
             product_id,
             products (
               name
             )
-          `);
+          `)) as { data: OrderItem[] | null };
 
         if (!orderItems) return;
 
@@ -40,7 +48,7 @@ function ProductsChartComponent() {
         const productSales = orderItems.reduce(
           (acc: Record<string, number>, item) => {
             const productName =
-              item.products[0]?.name || `Product ${item.product_id}`;
+              item.products?.name || `Product ${item.product_id}`;
             acc[productName] = (acc[productName] || 0) + (item.quantity || 0);
             return acc;
           },

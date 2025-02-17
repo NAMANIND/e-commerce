@@ -2,12 +2,22 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ShoppingBag, Tag, Truck, Package } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ShoppingBag,
+  Tag,
+  Truck,
+  Package,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/store/cartSlice";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { RootState } from "@/store/store";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
   id: string;
@@ -41,9 +51,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const dispatch = useDispatch();
   const router = useRouter();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartItem = cartItems.find((item) => item.id === product.id);
+  const cartQuantity = cartItem?.quantity || 0;
+  const remainingStock = product.stock - cartQuantity;
 
   function increaseQuantity() {
-    if (quantity < product.stock) {
+    if (quantity < remainingStock) {
       setQuantity(quantity + 1);
     }
   }
@@ -55,6 +69,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
   }
 
   const handleAddToCart = () => {
+    if (quantity > remainingStock) {
+      toast.error(
+        `Cannot add ${quantity} items. Only ${remainingStock} available in stock!`
+      );
+      return;
+    }
+
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -64,6 +85,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
       quantity,
       image_url: product.image_url,
       stock: product.stock,
+      discount_percentage: product.discount_percentage,
     };
     dispatch(addToCart(cartItem));
     toast.success(`${product.name} added to cart!`);
@@ -82,6 +104,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
             className="object-cover hover:scale-105 transition-transform duration-300"
             priority
           />
+          {remainingStock === 0 && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <Badge variant="destructive" className="text-lg">
+                Out of Stock
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -155,7 +184,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
-            {product.stock > 0 ? (
+            {remainingStock > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
@@ -174,35 +203,43 @@ export function ProductDetail({ product }: ProductDetailProps) {
                       type="button"
                       className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                       onClick={increaseQuantity}
-                      disabled={quantity >= product.stock}
+                      disabled={quantity >= remainingStock}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                  {product.stock < 10 && (
+                  {remainingStock < 10 && (
                     <p className="text-sm text-amber-600 font-medium flex items-center">
                       <span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>
-                      Only {product.stock} left in stock
+                      Only {remainingStock} left in stock
+                      {cartQuantity > 0 && ` (${cartQuantity} in cart)`}
                     </p>
                   )}
                 </div>
 
                 <Button
                   onClick={handleAddToCart}
-                  disabled={quantity > product.stock}
+                  disabled={quantity > remainingStock}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl text-base font-semibold shadow-sm transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="h-5 w-5 mr-2" />
-                  {quantity > product.stock ? "Out of Stock" : "Add to Cart"}
+                  {quantity > remainingStock ? "Out of Stock" : "Add to Cart"}
                 </Button>
               </div>
             ) : (
-              <Button
-                disabled
-                className="w-full py-6 bg-gray-100 text-gray-500 rounded-xl"
-              >
-                Out of Stock
-              </Button>
+              <div className="space-y-4">
+                <p className="text-sm text-red-600 font-medium flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  This item is currently out of stock
+                  {cartQuantity > 0 && ` (${cartQuantity} in cart)`}
+                </p>
+                <Button
+                  disabled
+                  className="w-full py-6 bg-gray-100 text-gray-500 rounded-xl"
+                >
+                  Out of Stock
+                </Button>
+              </div>
             )}
           </div>
         </div>

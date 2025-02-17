@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay">(
     "razorpay"
   );
@@ -148,6 +149,7 @@ export default function CheckoutPage() {
         handler: async (response: any) => {
           try {
             console.log("Payment successful, verifying...", response);
+            setVerifyingPayment(true);
             console.log(
               "Using stored access token:",
               accessToken ? "Token present" : "No token"
@@ -221,6 +223,8 @@ export default function CheckoutPage() {
             });
             toast.error(error.message || "Payment verification failed");
             setPlacingOrder(false);
+          } finally {
+            setVerifyingPayment(false);
           }
         },
         prefill: {
@@ -345,6 +349,42 @@ export default function CheckoutPage() {
     try {
       if (!user) throw new Error("Not authenticated");
 
+      // Check stock availability for all items
+      const stockCheckPromises = cartItems.map(async (item) => {
+        const { data: product, error } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", item.id)
+          .single();
+
+        if (error) throw error;
+        if (!product) throw new Error(`Product ${item.id} not found`);
+
+        return {
+          productId: item.id,
+          requestedQuantity: item.quantity,
+          availableStock: product.stock,
+          name: item.name,
+        };
+      });
+
+      const stockResults = await Promise.all(stockCheckPromises);
+
+      // Check if any items are out of stock
+      const outOfStockItems = stockResults.filter(
+        (item) => item.requestedQuantity > item.availableStock
+      );
+
+      if (outOfStockItems.length > 0) {
+        const itemsList = outOfStockItems
+          .map((item) => `${item.name} (only ${item.availableStock} available)`)
+          .join(", ");
+
+        // throw new Error(`Some items are out of stock: ${itemsList}`);
+        toast.error(`Some items are out of stock: ${itemsList}`);
+        return;
+      }
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -383,7 +423,16 @@ export default function CheckoutPage() {
       if (paymentMethod === "razorpay") {
         await initializeRazorpayPayment(order.id);
       } else {
-        // COD flow
+        // For COD, update stock immediately
+        const stockUpdatePromises = cartItems.map((item) =>
+          supabase.rpc("decrement_stock", {
+            p_product_id: item.id,
+            p_quantity: item.quantity,
+          })
+        );
+
+        await Promise.all(stockUpdatePromises);
+
         dispatch(clearCart());
         toast.success("Order placed successfully!");
         router.push("/profile?tab=orders");
@@ -677,9 +726,11 @@ export default function CheckoutPage() {
                       <Button
                         className="w-full"
                         onClick={handlePlaceOrder}
-                        disabled={placingOrder}
+                        disabled={placingOrder || verifyingPayment}
                       >
-                        {placingOrder
+                        {verifyingPayment
+                          ? "Verifying Payment..."
+                          : placingOrder
                           ? "Processing..."
                           : `Pay ${
                               paymentMethod === "cod"

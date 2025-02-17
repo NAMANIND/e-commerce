@@ -179,6 +179,34 @@ export async function POST(request: NextRequest, context: NextRequestContext) {
             throw updateError;
           }
 
+          // Get order items to update stock
+          const { data: orderItems, error: itemsError } = await supabase
+            .from("order_items")
+            .select("product_id, quantity")
+            .eq("order_id", order.id);
+
+          if (itemsError) {
+            console.error("Error fetching order items:", itemsError);
+            throw itemsError;
+          }
+
+          // Update stock for each product
+          const stockUpdatePromises = orderItems.map((item) =>
+            supabase.rpc("decrement_stock", {
+              p_product_id: item.product_id,
+              p_quantity: item.quantity,
+            })
+          );
+
+          try {
+            await Promise.all(stockUpdatePromises);
+          } catch (stockError) {
+            console.error("Error updating stock:", stockError);
+
+            // Even if stock update fails, payment was successful
+            // We should log this for admin attention but not fail the transaction
+          }
+
           console.log("Payment verified successfully:", {
             orderId: params.id,
             paymentId: razorpay_payment_id,

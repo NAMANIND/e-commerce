@@ -117,19 +117,14 @@ export default function CartPage() {
                                 ₹{item.price.toFixed(2)}
                               </p>
                               <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                {Math.round(
-                                  ((item.price - item.discounted_price) /
-                                    item.price) *
-                                    100
-                                )}
-                                % OFF
+                                {item.discount_percentage} % OFF
                               </span>
                             </>
                           )}
                         </div>
                         <div className="text-sm text-gray-500">
                           Price per item •{" "}
-                          {item.quantity > 1 &&
+                          {item.quantity >= 1 &&
                             `${item.quantity} items selected`}
                         </div>
                       </div>
