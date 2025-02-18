@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, ShoppingBag, Users, Package } from "lucide-react";
+import { ShoppingBag, Users, Package, IndianRupee } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { SalesChart } from "@/components/admin/charts/sales-chart";
 import { ProductsChart } from "@/components/admin/charts/products-chart";
@@ -72,11 +72,11 @@ export default function AdminDashboard() {
   const statsDisplay = [
     {
       label: "Total Sales",
-      value: `$${stats.totalSales.toLocaleString(undefined, {
+      value: `₹${stats.totalSales.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`,
-      icon: DollarSign,
+      icon: IndianRupee,
     },
     {
       label: "Orders",

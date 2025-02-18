@@ -271,7 +271,7 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{product.categories.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>₹{product.price.toFixed(2)}</TableCell>
                     <TableCell>{product.stock}</TableCell>
                     <TableCell>{product.is_featured ? "Yes" : "No"}</TableCell>
                     <TableCell className="text-right">

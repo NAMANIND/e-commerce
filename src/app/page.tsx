@@ -49,13 +49,13 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 Featured Collection
               </h2>
             </div>
             <Link href="/products?featured=true">
               <Button variant="ghost" className="group text-sm font-medium">
-                See All Featured
+                View All
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -70,13 +70,13 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 Our Collection
               </h2>
             </div>
             <Link href="/products">
               <Button variant="ghost" className="group text-sm font-medium">
-                View All Products
+                View All
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -107,7 +107,7 @@ export default function HomePage() {
               <h3 className="text-sm font-medium text-gray-900">
                 Free Shipping
               </h3>
-              <p className="text-xs text-gray-500 mt-1">On orders over $50</p>
+              <p className="text-xs text-gray-500 mt-1">On orders over ₹50</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <Shield className="h-8 w-8 text-blue-600 mb-3" />

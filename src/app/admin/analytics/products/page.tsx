@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { SalesChart } from "@/components/admin/charts/sales-chart";
+import { ProductsChart } from "@/components/admin/charts/products-chart";
 import {
+  Package,
+  TrendingUp,
   ArrowUp,
   ArrowDown,
-  IndianRupee,
-  TrendingUp,
   ShoppingBag,
   Calendar,
 } from "lucide-react";
@@ -29,11 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface SalesStats {
-  totalSales: number;
-  previousPeriodSales: number;
-  averageOrderValue: number;
-  conversionRate: number;
+interface ProductStats {
+  totalProducts: number;
+  totalItemsSold: number;
+  averageUnitsSold: number;
+  topSellingProduct: {
+    name: string;
+    unitsSold: number;
+    revenue: number;
+  };
+  previousPeriodItemsSold: number;
 }
 
 type DateRange = {
@@ -41,12 +46,32 @@ type DateRange = {
   to: Date | undefined;
 };
 
-export default function SalesAnalyticsPage() {
-  const [stats, setStats] = useState<SalesStats>({
-    totalSales: 0,
-    previousPeriodSales: 0,
-    averageOrderValue: 0,
-    conversionRate: 0,
+interface OrderItem {
+  quantity: number;
+  price_at_time: number;
+  products: {
+    id: string;
+    name: string;
+  };
+}
+
+interface ProductSale {
+  name: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+export default function ProductAnalyticsPage() {
+  const [stats, setStats] = useState<ProductStats>({
+    totalProducts: 0,
+    totalItemsSold: 0,
+    averageUnitsSold: 0,
+    topSellingProduct: {
+      name: "",
+      unitsSold: 0,
+      revenue: 0,
+    },
+    previousPeriodItemsSold: 0,
   });
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -56,10 +81,10 @@ export default function SalesAnalyticsPage() {
   const [selectedPreset, setSelectedPreset] = useState<string>("30days");
 
   useEffect(() => {
-    fetchSalesStats();
+    fetchProductStats();
   }, [dateRange, selectedPreset]);
 
-  async function fetchSalesStats() {
+  async function fetchProductStats() {
     try {
       let currentPeriodStart: Date;
       let previousPeriodStart: Date;
@@ -102,49 +127,92 @@ export default function SalesAnalyticsPage() {
         }
       }
 
-      const { data: currentPeriodOrders } = await supabase
-        .from("orders")
-        .select("total_amount")
+      // Get total products
+      const { count: totalProducts } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true });
+
+      // Get current period order items
+      const { data: currentPeriodItems } = (await supabase
+        .from("order_items")
+        .select(
+          `
+          quantity,
+          price_at_time,
+          products (
+            id,
+            name
+          )
+        `
+        )
         .gte("created_at", currentPeriodStart.toISOString())
         .lte(
           "created_at",
           dateRange.to?.toISOString() || new Date().toISOString()
-        );
+        )) as { data: OrderItem[] | null };
 
-      const { data: previousPeriodOrders } = await supabase
-        .from("orders")
-        .select("total_amount")
+      // Get previous period order items
+      const { data: previousPeriodItems } = await supabase
+        .from("order_items")
+        .select("quantity")
         .gte("created_at", previousPeriodStart.toISOString())
         .lt("created_at", currentPeriodStart.toISOString());
 
-      const totalSales =
-        currentPeriodOrders?.reduce(
-          (sum, order) => sum + (order.total_amount || 0),
+      if (!currentPeriodItems) return;
+
+      const totalItemsSold = currentPeriodItems.reduce(
+        (sum, item) => sum + (item.quantity || 0),
+        0
+      );
+
+      const previousPeriodItemsSold =
+        previousPeriodItems?.reduce(
+          (sum, item) => sum + (item.quantity || 0),
           0
         ) || 0;
-      const previousPeriodSales =
-        previousPeriodOrders?.reduce(
-          (sum, order) => sum + (order.total_amount || 0),
-          0
-        ) || 0;
-      const averageOrderValue = totalSales / (currentPeriodOrders?.length || 1);
+
+      // Calculate top selling product
+      const productSales = currentPeriodItems.reduce(
+        (acc: Record<string, ProductSale>, item) => {
+          const productId = item.products?.id;
+          if (!acc[productId]) {
+            acc[productId] = {
+              name: item.products?.name || "Unknown Product",
+              unitsSold: 0,
+              revenue: 0,
+            };
+          }
+          acc[productId].unitsSold += item.quantity || 0;
+          acc[productId].revenue +=
+            (item.price_at_time || 0) * (item.quantity || 0);
+          return acc;
+        },
+        {}
+      );
+
+      const topSellingProduct = Object.values(productSales).reduce(
+        (top: ProductSale | null, current: ProductSale) =>
+          current.unitsSold > (top?.unitsSold || 0) ? current : top,
+        null
+      ) || { name: "No sales", unitsSold: 0, revenue: 0 };
 
       setStats({
-        totalSales,
-        previousPeriodSales,
-        averageOrderValue,
-        conversionRate: ((currentPeriodOrders?.length || 0) / 100) * 3.5,
+        totalProducts: totalProducts || 0,
+        totalItemsSold,
+        averageUnitsSold: totalItemsSold / (totalProducts || 1),
+        topSellingProduct,
+        previousPeriodItemsSold,
       });
     } catch (error) {
-      console.error("Error fetching sales stats:", error);
+      console.error("Error fetching product stats:", error);
     } finally {
       setLoading(false);
     }
   }
 
   const salesChange =
-    ((stats.totalSales - stats.previousPeriodSales) /
-      stats.previousPeriodSales) *
+    ((stats.totalItemsSold - stats.previousPeriodItemsSold) /
+      (stats.previousPeriodItemsSold || 1)) *
     100;
 
   const handlePresetChange = (preset: string) => {
@@ -155,7 +223,7 @@ export default function SalesAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight">Sales Analytics</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Product Analytics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="p-6">
@@ -173,7 +241,7 @@ export default function SalesAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Sales Analytics</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Product Analytics</h2>
 
         <div className="flex items-center gap-4">
           <Select value={selectedPreset} onValueChange={handlePresetChange}>
@@ -247,10 +315,20 @@ export default function SalesAnalyticsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Sales</p>
-              <p className="text-2xl font-semibold">
-                ₹{stats.totalSales.toFixed(2)}
+              <p className="text-sm font-medium text-gray-600">
+                Total Products
               </p>
+              <p className="text-2xl font-semibold">{stats.totalProducts}</p>
+            </div>
+            <Package className="h-12 w-12 text-blue-600" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Units Sold</p>
+              <p className="text-2xl font-semibold">{stats.totalItemsSold}</p>
               <div className="mt-1 flex items-center">
                 {salesChange >= 0 ? (
                   <ArrowUp className="h-4 w-4 text-green-500" />
@@ -269,20 +347,6 @@ export default function SalesAnalyticsPage() {
                 </span>
               </div>
             </div>
-            <IndianRupee className="h-12 w-12 text-blue-600" />
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Average Order Value
-              </p>
-              <p className="text-2xl font-semibold">
-                ₹{stats.averageOrderValue.toFixed(2)}
-              </p>
-            </div>
             <ShoppingBag className="h-12 w-12 text-blue-600" />
           </div>
         </Card>
@@ -291,23 +355,42 @@ export default function SalesAnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">
-                Conversion Rate
+                Average Units per Product
               </p>
               <p className="text-2xl font-semibold">
-                {stats.conversionRate.toFixed(1)}%
+                {stats.averageUnitsSold.toFixed(1)}
               </p>
             </div>
             <TrendingUp className="h-12 w-12 text-blue-600" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Top Selling Product
+              </p>
+              <p className="text-lg font-semibold truncate max-w-[180px]">
+                {stats.topSellingProduct.name}
+              </p>
+              <p className="text-sm text-gray-500">
+                {stats.topSellingProduct.unitsSold} units sold
+              </p>
+            </div>
+            <div className="h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
+              <Package className="h-6 w-6 text-blue-600" />
+            </div>
           </div>
         </Card>
       </div>
 
       <Card className="p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-medium">Sales Over Time</h3>
+          <h3 className="text-lg font-medium">Top Products by Sales</h3>
         </div>
         <div className="h-[400px]">
-          <SalesChart />
+          <ProductsChart />
         </div>
       </Card>
     </div>

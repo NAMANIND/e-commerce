@@ -64,14 +64,13 @@ const navigation = [
     children: [
       { name: "Sales", href: "/admin/analytics/sales" },
       { name: "Products", href: "/admin/analytics/products" },
-      { name: "Customers", href: "/admin/analytics/customers" },
     ],
   },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: <Settings className="h-6 w-6" />,
-  },
+  // {
+  //   name: "Settings",
+  //   href: "/admin/settings",
+  //   icon: <Settings className="h-6 w-6" />,
+  // },
 ];
 
 export default function Sidebar() {

@@ -90,7 +90,7 @@ export function ImageSlider() {
             src={images[currentIndex]}
             alt={`Slider Image ${currentIndex + 1}`}
             fill
-            className="object-cover opacity-70"
+            className="object-cover opacity-70  max-w-7xl mx-auto  "
             priority
           />
         </motion.div>
@@ -98,7 +98,7 @@ export function ImageSlider() {
 
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-8">
+      <div className="relative max-w-7xl mx-auto px-8 sm:px-10 lg:px-12 h-full flex flex-col justify-between py-8">
         <div className="flex items-center">
           <motion.h2
             key={`title-${currentIndex}`}

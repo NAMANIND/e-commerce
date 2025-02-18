@@ -52,6 +52,18 @@ export default function ProductsPage() {
     }
   }, [category]);
 
+  const applyFilters = () => {
+    // const params = new URLSearchParams();
+    // if (selectedCategory) params.set("category", selectedCategory);
+    // if (sortBy) params.set("sort", sortBy);
+    // if (priceRange.min) params.set("minPrice", priceRange.min);
+    // if (priceRange.max) params.set("maxPrice", priceRange.max);
+    // if (isFeatured) params.set("featured", "true");
+    // if (q) params.set("q", q);
+    // window.location.href = `/products?${params.toString()}`;
+    setIsFilterOpen(false);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
@@ -144,20 +156,7 @@ export default function ProductsPage() {
                 )}
               </div>
 
-              <Button
-                className="w-full"
-                onClick={() => {
-                  const params = new URLSearchParams();
-                  if (selectedCategory)
-                    params.set("category", selectedCategory);
-                  if (sortBy) params.set("sort", sortBy);
-                  if (priceRange.min) params.set("minPrice", priceRange.min);
-                  if (priceRange.max) params.set("maxPrice", priceRange.max);
-                  if (isFeatured) params.set("featured", "true");
-                  if (q) params.set("q", q);
-                  window.location.href = `/products?${params.toString()}`;
-                }}
-              >
+              <Button className="w-full" onClick={applyFilters}>
                 Apply Filters
               </Button>
             </div>
@@ -171,7 +170,7 @@ export default function ProductsPage() {
             onClick={() => setIsFilterOpen(false)}
           >
             <div
-              className="absolute right-0 top-0 h-full w-80 bg-white p-6"
+              className="absolute right-0 top-0 h-full w-80 bg-white p-6 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="space-y-6">
@@ -258,21 +257,7 @@ export default function ProductsPage() {
                   )}
                 </div>
 
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (selectedCategory)
-                      params.set("category", selectedCategory);
-                    if (sortBy) params.set("sort", sortBy);
-                    if (priceRange.min) params.set("minPrice", priceRange.min);
-                    if (priceRange.max) params.set("maxPrice", priceRange.max);
-                    if (isFeatured) params.set("featured", "true");
-                    if (q) params.set("q", q);
-                    window.location.href = `/products?${params.toString()}`;
-                    setIsFilterOpen(false);
-                  }}
-                >
+                <Button className="w-full" onClick={applyFilters}>
                   Apply Filters
                 </Button>
               </div>

@@ -121,7 +121,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <div>
             <Link
               href={`/products?category=${product.categories.id}`}
-              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors capitalize"
             >
               <Tag className="h-4 w-4 mr-1" />
               {product.categories.name}
@@ -215,8 +215,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     <p className="text-sm text-amber-600 font-medium flex items-center">
                       <span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>
                       Only {remainingStock} left in stock
-                      {cartQuantity > 0 && ` (${cartQuantity} in cart)`}
                     </p>
+                  )}
+                  {cartQuantity > 0 && (
+                    <span className="text-xs text-green-600 text-center ml-2 font-medium bg-green-50 px-1.5 py-0.5 rounded-full shadow-sm ">
+                      {cartQuantity} item{cartQuantity > 1 ? "s" : ""} in cart
+                    </span>
                   )}
                 </div>
 
@@ -226,7 +230,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl text-base font-semibold shadow-sm transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <ShoppingBag className="h-5 w-5 mr-2" />
-                  {quantity > remainingStock ? "Out of Stock" : "Add to Cart"}
+                  {quantity > remainingStock
+                    ? "Out of Stock"
+                    : `Add ${quantity} item${quantity > 1 ? "s" : ""} to Cart`}
                 </Button>
               </div>
             ) : (

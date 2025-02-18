@@ -149,19 +149,19 @@ export function ProductGrid({
     );
   }
 
-  if (products.length === 0) {
-    return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-gray-500 text-lg mb-4">No products found</h3>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Add your first product
-        </Link>
-      </div>
-    );
-  }
+  // if (products.length === 0) {
+  //   return (
+  //     <div className="text-center py-12 bg-gray-50 rounded-lg">
+  //       <h3 className="text-gray-500 text-lg mb-4">No products found</h3>
+  //       <Link
+  //         href="/admin/products/new"
+  //         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+  //       >
+  //         Add your first product
+  //       </Link>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -215,23 +215,20 @@ export function ProductGrid({
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-gray-800 line-clamp-2 flex items-start justify-between gap-2">
-                    <span>
-                      {product.name}
-
-                      {/* {remainingStock > 0 && remainingStock <= 5 && (
+                  <h2 className="text-sm font-medium text-gray-800 line-clamp-1 flex items-start justify-between gap-2 relative">
+                    <span className="line-clamp-1">{product.name}</span>
+                    {cartQuantity > 0 && (
+                      <span className="text-xs text-green-600 text-center ml-2 font-medium bg-green-50 px-1.5 py-0.5 rounded-full shadow-sm absolute   right-2">
+                        {cartQuantity} in cart
+                      </span>
+                    )}
+                    {/* {remainingStock > 0 && remainingStock <= 5 && (
                         <span className="text-xs text-amber-600 text-center ml-2 font-medium bg-amber-50 px-1.5 py-0.5 rounded-full shadow-sm ">
                           Low stock
                         </span>
                       )} */}
-                      {cartQuantity > 0 && (
-                        <span className="text-xs text-green-600 text-center ml-2 font-medium bg-green-50 px-1.5 py-0.5 rounded-full shadow-sm ">
-                          {cartQuantity} in cart
-                        </span>
-                      )}
-                    </span>
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-2 my-2">
+                  </h2>
+                  <p className="text-sm text-gray-500 line-clamp-2 my-2 h-10">
                     {product.description}
                   </p>
                   <div className="mt-4 flex flex-col space-y-2">
