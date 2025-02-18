@@ -33,7 +33,9 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, [dispatch]);
 
-  const signInWithGoogle = async (redirectTo: string = "/profile") => {
+  const signInWithGoogle = async (
+    redirectTo: string = "/profile?checkout=true"
+  ) => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
