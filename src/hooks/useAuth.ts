@@ -52,7 +52,7 @@ export function useAuth() {
 
   const requireAuth = (redirectTo: string = "/login") => {
     if (!loading && !isAuthenticated) {
-      router.push(redirectTo);
+      router.push(redirectTo + "?redirect=true");
     }
   };
 
