@@ -7,7 +7,7 @@ import { useEffect } from "react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/profile";
+  const redirectTo = searchParams.get("redirect") || "/profile?checkout=true";
   const { isAuthenticated, loading, signInWithGoogle } = useAuth();
 
   useEffect(() => {

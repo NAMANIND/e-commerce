@@ -47,7 +47,7 @@ export function useAuth() {
   const signOut = async () => {
     await supabase.auth.signOut();
     dispatch(clearSession());
-    router.push("/login");
+    router.push("/");
   };
 
   const requireAuth = (redirectTo: string = "/login") => {
