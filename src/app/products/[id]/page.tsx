@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/products/product-detail";
 import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/products/navbar";
+import Head from "next/head";
 
 interface ProductPageProps {
   params: Promise<{
@@ -43,11 +44,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <main className="px-4 sm:px-6 lg:px-8 py-8">
-      <Navbar />
-      <div className="max-w-7xl mx-auto">
-        <ProductDetail product={product} />
-      </div>
-    </main>
+    <>
+      <Head>
+        <title>{product.name} - Your Store Name</title>
+        <meta name="description" content={product.description} />
+        <meta property="og:title" content={product.name} />
+        <meta property="og:description" content={product.description} />
+        <meta property="og:image" content={product.image_url} />
+        {/* <meta
+          property="og:url"
+          content={`https://yourstore.com/products/${product.id}`}
+        /> */}
+      </Head>
+      <main className="px-4 sm:px-6 lg:px-8 py-8">
+        <Navbar />
+        <div className="max-w-7xl mx-auto">
+          <ProductDetail product={product} />
+        </div>
+      </main>
+    </>
   );
 }
