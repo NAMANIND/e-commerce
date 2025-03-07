@@ -66,11 +66,11 @@ const navigation = [
       { name: "Products", href: "/admin/analytics/products" },
     ],
   },
-  // {
-  //   name: "Settings",
-  //   href: "/admin/settings",
-  //   icon: <Settings className="h-6 w-6" />,
-  // },
+  {
+    name: "Settings",
+    href: "/admin/settings",
+    icon: <Settings className="h-6 w-6" />,
+  },
 ];
 
 export default function Sidebar() {

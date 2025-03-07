@@ -5,11 +5,40 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-const images = [
-  "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=1475&auto=format&fit=crop", // Colorful toy blocks
-  "https://images.unsplash.com/photo-1596073419667-9d77d59f033f?q=80&w=1435&auto=format&fit=crop", // Indoor plants
-  "https://images.unsplash.com/photo-1581557991964-125469da3b8a?q=80&w=1470&auto=format&fit=crop", // Educational toys
+interface SlideContent {
+  image: string;
+  title: string;
+  description: string;
+  buttonText: string;
+}
+
+const defaultSlides: SlideContent[] = [
+  {
+    image:
+      "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=1475&auto=format&fit=crop",
+    title: "Educational Toys Collection",
+    description:
+      "Discover our range of educational toys that make learning fun and engaging.",
+    buttonText: "Shop Toys",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1596073419667-9d77d59f033f?q=80&w=1435&auto=format&fit=crop",
+    title: "Indoor Plants Collection",
+    description:
+      "Transform your space with our selection of beautiful indoor plants.",
+    buttonText: "View Plants",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1581557991964-125469da3b8a?q=80&w=1470&auto=format&fit=crop",
+    title: "Kids Development Toys",
+    description:
+      "Help your child grow with our carefully curated developmental toys.",
+    buttonText: "Shop Toys",
+  },
 ];
 
 const ROTATION_INTERVAL = 5000; // 5 seconds between slides
@@ -18,23 +47,45 @@ export function ImageSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const [progress, setProgress] = useState(0);
-  const intervalRef = useRef(null);
-  const progressIntervalRef = useRef(null);
+  const [slides, setSlides] = useState<SlideContent[]>(defaultSlides);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    async function loadSliderContent() {
+      try {
+        const { data, error } = await supabase
+          .from("settings")
+          .select("settings")
+          .eq("type", "content")
+          .single();
+
+        if (error) throw error;
+
+        if (data?.settings?.slider_content) {
+          setSlides(data.settings.slider_content);
+        }
+      } catch (error) {
+        console.error("Error loading slider content:", error);
+      }
+    }
+
+    loadSliderContent();
+  }, []);
 
   const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
     setProgress(0);
   };
 
   const prevSlide = () => {
     setCurrentIndex(
-      (prevIndex) => (prevIndex - 1 + images.length) % images.length
+      (prevIndex) => (prevIndex - 1 + slides.length) % slides.length
     );
     setProgress(0);
   };
 
   useEffect(() => {
-    // Clear any existing intervals when component unmounts or dependencies change
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (progressIntervalRef.current)
@@ -43,25 +94,19 @@ export function ImageSlider() {
   }, []);
 
   useEffect(() => {
-    // Clear existing intervals
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
 
     if (!isHovering) {
-      // Setup rotation interval
-      intervalRef.current = setInterval(
-        nextSlide,
-        ROTATION_INTERVAL
-      ) as unknown as null;
+      intervalRef.current = setInterval(nextSlide, ROTATION_INTERVAL);
 
-      // Setup progress tracking (update 100 times during the interval)
-      const progressStep = 100 / (ROTATION_INTERVAL / 10); // Update every 10ms
+      const progressStep = 100 / (ROTATION_INTERVAL / 10);
       progressIntervalRef.current = setInterval(() => {
         setProgress((prev) => {
           const newProgress = prev + progressStep;
           return newProgress > 100 ? 100 : newProgress;
         });
-      }, 10) as unknown as null;
+      }, 10);
     }
 
     return () => {
@@ -69,7 +114,9 @@ export function ImageSlider() {
       if (progressIntervalRef.current)
         clearInterval(progressIntervalRef.current);
     };
-  }, [isHovering, currentIndex]);
+  }, [isHovering, currentIndex, slides.length]);
+
+  if (slides.length === 0) return null;
 
   return (
     <section
@@ -87,10 +134,10 @@ export function ImageSlider() {
           className="absolute inset-0"
         >
           <Image
-            src={images[currentIndex]}
-            alt={`Slider Image ${currentIndex + 1}`}
+            src={slides[currentIndex].image}
+            alt={slides[currentIndex].title}
             fill
-            className="object-cover opacity-70  max-w-7xl mx-auto  "
+            className="object-cover opacity-70 max-w-7xl mx-auto"
             priority
           />
         </motion.div>
@@ -107,11 +154,7 @@ export function ImageSlider() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-3xl sm:text-4xl font-bold"
           >
-            {currentIndex === 0
-              ? "Educational Toys Collection"
-              : currentIndex === 1
-              ? "Indoor Plants Collection"
-              : "Kids Development Toys"}
+            {slides[currentIndex].title}
           </motion.h2>
         </div>
 
@@ -123,11 +166,7 @@ export function ImageSlider() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-lg sm:text-xl max-w-xl text-center"
           >
-            {currentIndex === 0
-              ? "Discover our range of educational toys that make learning fun and engaging."
-              : currentIndex === 1
-              ? "Transform your space with our selection of beautiful indoor plants."
-              : "Help your child grow with our carefully curated developmental toys."}
+            {slides[currentIndex].description}
           </motion.p>
 
           <motion.div
@@ -136,7 +175,7 @@ export function ImageSlider() {
             transition={{ delay: 0.4 }}
           >
             <Button className="bg-white text-gray-900 hover:bg-gray-200 px-6 py-2 rounded-full">
-              {currentIndex === 1 ? "View Plants" : "Shop Toys"}
+              {slides[currentIndex].buttonText}
             </Button>
           </motion.div>
         </div>
@@ -151,12 +190,11 @@ export function ImageSlider() {
             <ChevronLeft className="h-6 w-6" />
           </Button>
 
-          {/* Progress indicators */}
           <div className="flex space-x-2">
-            {images.map((_, index) => (
+            {slides.map((_, index) => (
               <div
                 key={index}
-                className="relative h-1 w-16 bg-white/30 rounded-full overflow-hidden"
+                className="relative h-1 w-16 bg-white/30 rounded-full overflow-hidden cursor-pointer"
                 onClick={() => {
                   setCurrentIndex(index);
                   setProgress(0);

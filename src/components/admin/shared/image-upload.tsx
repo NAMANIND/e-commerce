@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Upload, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 
 interface ImageUploadProps {
   value: string;
@@ -27,6 +28,13 @@ export function ImageUpload({
 
       setLoading(true);
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);
@@ -34,6 +42,9 @@ export function ImageUpload({
       const response = await fetch("/api/admin/upload", {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       const result = await response.json();

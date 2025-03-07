@@ -113,6 +113,7 @@ export default function NewCategoryPage() {
               value={form.image_url}
               onChange={(url) => setForm({ ...form, image_url: url })}
               onRemove={() => setForm({ ...form, image_url: "" })}
+              folder="category-images"
             />
           </div>
 

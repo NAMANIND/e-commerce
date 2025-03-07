@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { removeFromCart, updateQuantity } from "@/store/cartSlice";
 import { toast } from "react-toastify";
+import { useShippingSettings } from "@/hooks/useShippingSettings";
 
 const DEFAULT_PRODUCT_IMAGE =
   "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=200&auto=format&fit=crop";
@@ -17,15 +18,14 @@ const DEFAULT_PRODUCT_IMAGE =
 export default function CartPage() {
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
+  const { calculateShipping, settings } = useShippingSettings();
 
   const subtotal = cartItems.reduce(
     (total, item) =>
-      total +
-      (item.discounted_price > 0 ? item.discounted_price : item.price) *
-        item.quantity,
+      total + (item.discounted_price || item.price) * item.quantity,
     0
   );
-  const shipping = subtotal > 100 ? 0 : 10;
+  const shipping = calculateShipping(subtotal);
   const total = subtotal + shipping;
 
   const handleUpdateQuantity = (
@@ -278,7 +278,8 @@ export default function CartPage() {
                   </div>
                   {shipping === 0 && (
                     <p className="text-sm text-green-600">
-                      ✓ Free shipping applied (Order above ₹100)
+                      ✓ Free shipping applied (Order above ₹
+                      {settings.free_shipping_threshold})
                     </p>
                   )}
                   <div className="h-px bg-gray-200"></div>
@@ -296,7 +297,8 @@ export default function CartPage() {
                     Proceed to Checkout
                   </Button>
                   <p className="text-sm text-gray-500 text-center mt-4">
-                    Free shipping on orders over ₹100
+                    Free shipping on orders over ₹
+                    {settings.free_shipping_threshold}
                   </p>
                 </div>
               </div>

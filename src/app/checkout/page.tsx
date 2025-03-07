@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "react-toastify";
 import { clearCart } from "@/store/cartSlice";
 import { useAuth } from "@/hooks/useAuth";
+import { useShippingSettings } from "@/hooks/useShippingSettings";
 
 type CheckoutStep = "address" | "confirmation";
 
@@ -46,13 +47,14 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay">(
     "razorpay"
   );
+  const { calculateShipping, settings } = useShippingSettings();
 
   const subtotal = cartItems.reduce(
     (total, item) =>
       total + (item.discounted_price || item.price) * item.quantity,
     0
   );
-  const shipping = subtotal > 100 ? 0 : 10;
+  const shipping = calculateShipping(subtotal);
   const total = subtotal + shipping;
 
   useEffect(() => {
@@ -783,7 +785,8 @@ export default function CheckoutPage() {
                   </div>
                   {shipping === 0 && (
                     <p className="text-sm text-green-600">
-                      ✓ Free shipping applied (Order above ₹100)
+                      ✓ Free shipping applied (Order above ₹
+                      {settings.free_shipping_threshold})
                     </p>
                   )}
                 </div>

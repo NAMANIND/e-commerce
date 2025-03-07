@@ -1,11 +1,38 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const folder = (formData.get("folder") as string) || "misc";
+
+    // Get the auth header
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Create a new Supabase client with the auth token
+    const supabaseClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
 
     if (!file) {
       return NextResponse.json(
@@ -27,14 +54,14 @@ export async function POST(request: Request) {
       : "product-images";
 
     // Upload file to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from(bucket)
       .upload(fileName, file);
 
     if (error) throw error;
 
     // Get public URL
-    const { data: publicUrl } = supabase.storage
+    const { data: publicUrl } = supabaseClient.storage
       .from(bucket)
       .getPublicUrl(fileName);
 
@@ -60,6 +87,32 @@ export async function DELETE(request: Request) {
     const path = searchParams.get("path");
     const folder = path?.split("/")[0];
 
+    // Get the auth header
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Create a new Supabase client with the auth token
+    const supabaseClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+
     if (!path) {
       return NextResponse.json(
         { success: false, error: "File path is required" },
@@ -72,7 +125,7 @@ export async function DELETE(request: Request) {
       ? "category-images"
       : "product-images";
 
-    const { error } = await supabase.storage.from(bucket).remove([path]);
+    const { error } = await supabaseClient.storage.from(bucket).remove([path]);
 
     if (error) throw error;
 

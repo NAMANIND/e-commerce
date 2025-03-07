@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   Truck,
@@ -7,8 +9,11 @@ import {
   Package,
   Phone,
 } from "lucide-react";
+import { useShippingSettings } from "@/hooks/useShippingSettings";
 
 export default function ShippingAndDelivery() {
+  const { settings } = useShippingSettings();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -90,9 +95,10 @@ export default function ShippingAndDelivery() {
                       3. Shipping Charges
                     </h2>
                     <div className="space-y-3 text-gray-600">
+                      <p>Standard shipping rate: ₹{settings.shipping_rate}</p>
                       <p>
-                        Shipping fees are calculated at checkout based on your
-                        location and order weight.
+                        Free shipping on orders above ₹
+                        {settings.free_shipping_threshold}
                       </p>
                       <p>
                         Any applicable taxes, customs duties, or import fees are

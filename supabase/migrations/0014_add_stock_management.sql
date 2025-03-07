@@ -85,6 +85,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS check_stock_not_negative ON products;
+
+-- Create trigger
 CREATE TRIGGER check_stock_not_negative
     BEFORE UPDATE OR INSERT ON products
     FOR EACH ROW

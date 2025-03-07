@@ -35,6 +35,7 @@ export function CategorySlider({ limit = 10 }: CategorySliderProps) {
       if (!result.success || !Array.isArray(result.data)) {
         throw new Error(result.error || "Failed to fetch categories");
       }
+      console.log("result.data", result.data);
 
       setCategories(result.data.slice(0, limit));
     } catch (err) {
