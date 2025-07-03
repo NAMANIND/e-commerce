@@ -136,10 +136,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
             {product.discount_percentage > 0 ? (
               <div className="flex items-center gap-2">
                 <span className="text-3xl font-bold text-gray-900">
-                  ${product.discounted_price.toFixed(2)}
+                  ₹{product.discounted_price.toFixed(2)}
                 </span>
                 <span className="text-lg line-through text-gray-500">
-                  ${product.price.toFixed(2)}
+                  ₹{product.price.toFixed(2)}
                 </span>
                 <span className="ml-2 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
                   {product.discount_percentage}% OFF
@@ -147,7 +147,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </div>
             ) : (
               <span className="text-3xl font-bold text-gray-900">
-                ${product.price.toFixed(2)}
+                ₹{product.price.toFixed(2)}
               </span>
             )}
           </div>
@@ -180,7 +180,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <p className="font-medium text-gray-900">
                   Shipping Information
                 </p>
-                <p className="mt-1">Free shipping on orders over $50</p>
+                <p className="mt-1">Free shipping on orders over ₹50</p>
                 <p>Usually ships within 1-2 business days</p>
               </div>
             </div>
@@ -280,7 +280,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   {relatedProduct.name}
                 </h3>
                 <p className="mt-1 text-sm font-semibold text-gray-900">
-                  ${relatedProduct.price.toFixed(2)}
+                  ₹{relatedProduct.price.toFixed(2)}
                 </p>
               </Link>
             ))}
