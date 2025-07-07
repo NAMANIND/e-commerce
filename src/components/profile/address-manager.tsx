@@ -12,6 +12,7 @@ import {
   StarIcon as StarSolidIcon,
 } from "@heroicons/react/24/solid";
 import { StarIcon as StarOutlineIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 interface Address {
   id: string;
@@ -48,6 +49,7 @@ export default function AddressManager({ userId }: AddressManagerProps) {
     type: "home",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const router = useRouter();
 
   useEffect(() => {
     loadAddresses();
@@ -127,6 +129,8 @@ export default function AddressManager({ userId }: AddressManagerProps) {
         type: "home",
       });
       toast.success("Address added successfully");
+      // redirect to checkout page if needed
+      router.push("/checkout");
     } catch (error) {
       console.error("Error adding address:", error);
       toast.error("Failed to add address");

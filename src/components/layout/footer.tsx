@@ -51,13 +51,14 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <Link href="/" className="block">
-              <Image
+              {/* <Image
                 src="/logo.png"
                 alt="PurseKharido Logo"
                 width={120}
                 height={40}
                 className="brightness-0 invert"
-              />
+              /> */}
+              <h1 className="text-2xl font-bold text-white">PurseKharido.in</h1>
             </Link>
             <p className="text-sm text-gray-400">
               Your one-stop destination for quality purses and accessories at

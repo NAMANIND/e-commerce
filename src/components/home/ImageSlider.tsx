@@ -6,12 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 interface SlideContent {
   image: string;
   title: string;
   description: string;
   buttonText: string;
+  buttonLink: string;
 }
 
 const defaultSlides: SlideContent[] = [
@@ -22,6 +24,7 @@ const defaultSlides: SlideContent[] = [
     description:
       "Discover our range of educational toys that make learning fun and engaging.",
     buttonText: "Shop Toys",
+    buttonLink: "/products?category=toys",
   },
   {
     image:
@@ -30,6 +33,7 @@ const defaultSlides: SlideContent[] = [
     description:
       "Transform your space with our selection of beautiful indoor plants.",
     buttonText: "View Plants",
+    buttonLink: "/products?category=plants",
   },
   {
     image:
@@ -38,6 +42,7 @@ const defaultSlides: SlideContent[] = [
     description:
       "Help your child grow with our carefully curated developmental toys.",
     buttonText: "Shop Toys",
+    buttonLink: "/products?category=kids-toys",
   },
 ];
 
@@ -50,6 +55,7 @@ export function ImageSlider() {
   const [slides, setSlides] = useState<SlideContent[]>(defaultSlides);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function loadSliderContent() {
@@ -116,6 +122,22 @@ export function ImageSlider() {
     };
   }, [isHovering, currentIndex, slides.length]);
 
+  const handleButtonClick = () => {
+    const currentSlide = slides[currentIndex];
+    if (currentSlide.buttonLink) {
+      // Check if it's an external URL
+      if (
+        currentSlide.buttonLink.startsWith("http://") ||
+        currentSlide.buttonLink.startsWith("https://")
+      ) {
+        window.open(currentSlide.buttonLink, "_self");
+      } else {
+        // Internal navigation
+        router.push(currentSlide.buttonLink);
+      }
+    }
+  };
+
   if (slides.length === 0) return null;
 
   return (
@@ -174,7 +196,10 @@ export function ImageSlider() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <Button className="bg-white text-gray-900 hover:bg-gray-200 px-6 py-2 rounded-full">
+            <Button
+              onClick={handleButtonClick}
+              className="bg-white text-gray-900 hover:bg-gray-200 px-6 py-2 rounded-full"
+            >
               {slides[currentIndex].buttonText}
             </Button>
           </motion.div>

@@ -54,6 +54,7 @@ interface OrderWithUser {
     state: string;
     postal_code: string;
     country: string;
+    phone?: string;
   };
   users: {
     email: string;
@@ -149,7 +150,8 @@ export default function OrdersPage() {
             city,
             state,
             postal_code,
-            country
+            country,
+            phone
           )
         `
         )
@@ -197,6 +199,7 @@ export default function OrdersPage() {
           state: "N/A",
           postal_code: "N/A",
           country: "N/A",
+          phone: "N/A",
         },
       }));
 
@@ -617,6 +620,9 @@ export default function OrdersPage() {
                 <h3 className="font-medium text-gray-900">Shipping Address</h3>
                 <div className="mt-2 text-sm text-gray-500">
                   <p>{selectedOrder.shipping_address.name}</p>
+                  {selectedOrder.shipping_address.phone && (
+                    <p>{selectedOrder.shipping_address.phone}</p>
+                  )}
                   <p>{selectedOrder.shipping_address.address_line1}</p>
                   {selectedOrder.shipping_address.address_line2 && (
                     <p>{selectedOrder.shipping_address.address_line2}</p>

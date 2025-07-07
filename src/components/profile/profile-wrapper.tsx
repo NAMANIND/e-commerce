@@ -99,17 +99,17 @@ export default function ProfileWrapper() {
           <TabsContent value="account" className="mt-0 outline-none space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Profile and Personal Information */}
-              <div className="lg:col-span-1">
+              {/* <div className="lg:col-span-1">
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">
                     Personal Information
                   </h2>
                   <ProfileDetails user={user} />
                 </div>
-              </div>
+              </div> */}
 
               {/* Addresses Section */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-full">
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <AddressManager userId={user.id} />
                 </div>

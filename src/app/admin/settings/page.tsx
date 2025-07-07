@@ -13,6 +13,7 @@ const defaultSlides = [
     description:
       "Discover our range of educational toys that make learning fun and engaging.",
     buttonText: "Shop Toys",
+    buttonLink: "/products?category=toys",
   },
   {
     image:
@@ -21,6 +22,7 @@ const defaultSlides = [
     description:
       "Transform your space with our selection of beautiful indoor plants.",
     buttonText: "View Plants",
+    buttonLink: "/products?category=plants",
   },
   {
     image:
@@ -29,6 +31,7 @@ const defaultSlides = [
     description:
       "Help your child grow with our carefully curated developmental toys.",
     buttonText: "Shop Toys",
+    buttonLink: "/products?category=kids-toys",
   },
 ];
 
@@ -75,6 +78,7 @@ interface ContentSettings {
     title: string;
     description: string;
     buttonText: string;
+    buttonLink: string;
   }>;
 }
 
@@ -1016,6 +1020,33 @@ export default function SettingsPage() {
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     />
                   </div>
+
+                  {/* Button Link */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Button Link (URL)
+                    </label>
+                    <input
+                      type="text"
+                      value={slide.buttonLink || ""}
+                      onChange={(e) =>
+                        setContentSettings((prev) => ({
+                          ...prev,
+                          slider_content: prev.slider_content.map((s, i) =>
+                            i === index
+                              ? { ...s, buttonLink: e.target.value }
+                              : s
+                          ),
+                        }))
+                      }
+                      placeholder="/products, /about, https://example.com"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <p className="mt-1 text-sm text-gray-400">
+                      Enter relative path (e.g., /products) or full URL (e.g.,
+                      https://example.com)
+                    </p>
+                  </div>
                 </div>
               ))}
 
@@ -1031,6 +1062,7 @@ export default function SettingsPage() {
                         title: "New Slide",
                         description: "Add a description for this slide",
                         buttonText: "Click Here",
+                        buttonLink: "/",
                       },
                     ],
                   }));

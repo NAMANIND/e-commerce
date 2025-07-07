@@ -25,10 +25,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable}  antialiased text-black bg-white`}
       >
         <Provider store={store}>
-          <PersistGate
-            loading={<div>Loading saved cart...</div>}
-            persistor={persistor}
-          >
+          <PersistGate loading={<div></div>} persistor={persistor}>
             {children}
             <ToastContainer
               position="top-right"

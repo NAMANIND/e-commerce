@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Tag,
+  LogOut,
 } from "lucide-react";
 
 const navigation = [
@@ -77,6 +78,18 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+
+  const logout = () => {
+    // Clear localStorage
+    localStorage.removeItem("adminAuth");
+
+    // Clear cookie
+    document.cookie =
+      "adminAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+    // Redirect to login
+    window.location.href = "/admin/login";
+  };
 
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) =>
@@ -185,10 +198,23 @@ export default function Sidebar() {
       >
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
         <div className="fixed inset-y-0 left-0 z-40 w-72 overflow-y-auto bg-gray-900 p-6">
-          <div className="space-y-4">
-            {navigation.map((item) => (
-              <NavItem key={item.name} item={item} />
-            ))}
+          <div className="flex h-full flex-col">
+            <div className="space-y-4">
+              {navigation.map((item) => (
+                <NavItem key={item.name} item={item} />
+              ))}
+            </div>
+
+            {/* Logout button for mobile */}
+            <div className="mt-auto pt-4">
+              <button
+                onClick={logout}
+                className="group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 text-gray-400 hover:bg-gray-800 hover:text-white"
+              >
+                <LogOut className="h-6 w-6" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -206,6 +232,17 @@ export default function Sidebar() {
               {navigation.map((item) => (
                 <NavItem key={item.name} item={item} />
               ))}
+            </div>
+
+            {/* Logout button */}
+            <div className="mt-auto pt-4">
+              <button
+                onClick={logout}
+                className="group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 text-gray-400 hover:bg-gray-800 hover:text-white"
+              >
+                <LogOut className="h-6 w-6" />
+                <span>Logout</span>
+              </button>
             </div>
           </nav>
         </div>
