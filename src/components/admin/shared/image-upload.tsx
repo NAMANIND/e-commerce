@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, AlertCircle, Check } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -21,7 +21,7 @@ export function ImageUpload({
   onChange,
   onRemove,
   folder = "misc",
-  maxSize = 5, // 5MB default
+  maxSize = 10, // 5MB default
   acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }: ImageUploadProps) {
   const [loading, setLoading] = useState(false);
