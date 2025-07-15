@@ -40,15 +40,15 @@ interface Product {
   image_url: string;
   category_id: string;
   is_featured: boolean;
-  categories: {
+  categories?: {
     id: string;
     name: string;
-  };
+  } | null;
 }
 
 interface Category {
   id: string;
-  name: string;
+  name?: string;
 }
 
 export default function AdminProductsPage() {
@@ -108,9 +108,16 @@ export default function AdminProductsPage() {
         throw new Error(result.error || "Failed to fetch categories");
       }
 
-      setCategories(result.data);
+      // Handle categories that might not have proper names
+      const processedCategories = result.data.map((category: any) => ({
+        ...category,
+        name: category.name || null, // Explicitly set to null if empty/undefined
+      }));
+
+      setCategories(processedCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      toast.error("Failed to fetch categories");
     }
   };
 
@@ -149,7 +156,13 @@ export default function AdminProductsPage() {
   const filteredProducts = products.filter((product) => {
     // Filter by category
     if (categoryFilter && categoryFilter !== "all") {
-      if (product.category_id !== categoryFilter) return false;
+      if (categoryFilter === "unnamed") {
+        // Show only products with unnamed categories
+        if (product.categories?.name) return false;
+      } else {
+        // Show products with specific category
+        if (product.category_id !== categoryFilter) return false;
+      }
     }
     return true;
   });
@@ -191,9 +204,11 @@ export default function AdminProductsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="unnamed">Unnamed Categories Only</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                    {category.name ||
+                      `Unnamed Category (ID: ${category.id.substring(0, 8)})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -276,7 +291,24 @@ export default function AdminProductsPage() {
                         </div>
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.categories.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={
+                              !product.categories?.name
+                                ? "text-red-500 font-medium"
+                                : ""
+                            }
+                          >
+                            {product.categories?.name || "Unnamed Category"}
+                          </span>
+                          {!product.categories?.name && (
+                            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                              Fix Required
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
@@ -343,7 +375,12 @@ export default function AdminProductsPage() {
                 <DialogTitle>Edit Product</DialogTitle>
               </DialogHeader>
               <ProductForm
-                categories={categories}
+                categories={
+                  categories.filter((cat) => cat.name) as Array<{
+                    id: string;
+                    name: string;
+                  }>
+                }
                 initialData={selectedProduct || undefined}
                 onSubmit={() => {
                   setIsDrawerOpen(false);

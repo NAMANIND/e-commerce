@@ -123,6 +123,26 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // Check if any products are associated with this category
+    const { data: products, error: countError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("category_id", id)
+      .limit(1);
+
+    if (countError) throw countError;
+
+    if (products && products.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Cannot delete category with associated products",
+          code: "CATEGORY_HAS_PRODUCTS",
+        },
+        { status: 400 }
+      );
+    }
+
     const { error } = await supabase.from("categories").delete().eq("id", id);
 
     if (error) throw error;

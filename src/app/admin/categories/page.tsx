@@ -61,7 +61,14 @@ export default function AdminCategoriesPage() {
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to delete category");
+        if (result.code === "CATEGORY_HAS_PRODUCTS") {
+          toast.error(
+            "Cannot delete category that has products associated with it. Please remove all products from this category first."
+          );
+        } else {
+          throw new Error(result.error || "Failed to delete category");
+        }
+        return;
       }
 
       toast.success("Category deleted successfully");
